@@ -1,0 +1,24 @@
+{
+  "name": "YASAI - Yet Another Sandbox AI",
+  "build": {
+    "dockerfile": "Containerfile"
+  },
+  "remoteUser": "dev",
+  "runArgs": [
+    "--device=/dev/fuse",
+    "--cap-add=SYS_ADMIN",
+    "--security-opt=apparmor:unconfined"
+  ],
+  "mounts": [
+    "source=sandbox-m2-cache,target=/home/dev/.m2,type=volume",
+    "source=sandbox-uv-cache,target=/home/dev/.cache/uv,type=volume",
+    "source=sandbox-mcp-memory,target=/home/dev/.local/share/mcp,type=volume",
+    "source=sandbox-claude-config,target=/home/dev/.claude,type=volume",
+    "source=sandbox-aichat-config,target=/home/dev/.config/aichat,type=volume"
+  ],
+  "containerEnv": {
+    "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}",
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}"
+  }
+}

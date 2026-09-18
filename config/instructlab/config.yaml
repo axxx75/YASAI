@@ -1,0 +1,12 @@
+general:
+  log_level: INFO
+
+chat:
+  model: meta-llama/llama-3.3-70b-instruct:free
+  endpoint: https://openrouter.ai/api/v1
+  api_key: sk-or-v1-TUAKEYHERE...
+  max_tokens: 2048
+  temperature: 0.7
+
+evaluate:
+  base_model: meta-llama/llama-3.3-70b-instruct:free

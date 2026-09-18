@@ -1,0 +1,38 @@
+services:
+  ai-lab-dev:
+    container_name: yasai
+    image: yasai
+    build:
+      context: .
+      dockerfile: .devcontainer/Containerfile
+      args:
+        MCP_ATLASSIAN_TAG: "v0.21.0"
+    #user: dev
+    user: "1000:1000"
+    working_dir: /workspaces
+    env_file:
+      - .env
+    environment:
+      - GH_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    devices:
+      - "/dev/fuse:/dev/fuse"
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      # Mount del codice/progetti locali
+      - /root/yasai:/workspaces:z
+      # Volumi persistenti per cache e memoria agenti MCP
+      - dev-m2-cache:/home/dev/.m2
+      - dev-uv-cache:/home/dev/.cache/uv
+      - dev-mcp-memory:/home/dev/.local/share/mcp
+      - dev-claude-config:/home/dev/.claude
+
+volumes:
+  dev-m2-cache:
+  dev-uv-cache:
+  dev-mcp-memory:
+  dev-claude-config:
