@@ -9,6 +9,14 @@ DEFAULT_HEADERS = {
     "X-Title": "AI Lab Agentic Router"
 }
 
+MEMORY_DB_PATH = os.getenv(
+    "YASAI_MEMORY_DB_PATH",
+    "~/.local/share/yasai/conversations.db",
+)
+MEMORY_MAX_MESSAGES = int(os.getenv("YASAI_MEMORY_MAX_MESSAGES", "20"))
+MEMORY_MAX_CONTENT_CHARS = int(os.getenv("YASAI_MEMORY_MAX_CONTENT_CHARS", "20000"))
+MEMORY_SESSION_ID = os.getenv("YASAI_SESSION_ID", "default").strip() or "default"
+
 def fetch_all_models() -> list[dict]:
     """Recupera l'elenco completo dei modelli da OpenRouter."""
     url = f"{OPENROUTER_API_BASE}/models"
