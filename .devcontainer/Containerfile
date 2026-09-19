@@ -168,5 +168,11 @@ RUN claude mcp add --scope user --transport http atlassian https://mcp.atlassian
 RUN --mount=type=cache,target=/home/dev/.npx \ 
    npm install -g --ignore-scripts --min-release-age=0 --prefix /home/dev/.local @earendil-works/pi-coding-agent
 
-# Processo di mantenimento in background
-CMD ["sleep", "infinity"]
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/bin/bash"]
+
+## Processo di mantenimento in background
+#CMD ["sleep", "infinity"]

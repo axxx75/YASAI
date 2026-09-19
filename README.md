@@ -330,8 +330,7 @@ Diversi passaggi installano l'ultima versione disponibile (`aichat` da `releases
 
 Stato del progetto: sviluppo attivo, prime release (`Start rel 0.1`). Punti aperti individuati:
 
-- [ ] **Manca `requirements.txt`**: `requests` e `pydantic` non sono dichiarati (probabilmente arrivano come dipendenze transitive di LiteLLM — da verificare con una build pulita).
-- [ ] **`agent-router/` non è copiato nell'immagine** (nessun `COPY`/`ADD`): il codice è disponibile solo se la cartella montata su `/workspaces` contiene questo repository.
+- [ ] **`agent-router/` non è copiato nell'immagine** (nessun `COPY`/`ADD`): il codice è disponibile perche la cartella è montata su `/workspaces` e contiene questo repository.
 - [ ] **Path host hard-coded** nel mount di `docker-compose.yml` (`/home/axxx/yasai`).
 - [ ] **`main.py` è legacy e non funzionante**: chiama `analyze_and_route()` con un solo argomento, mentre `router.py` ne richiede quattro. Usare `main_free.py` / `main_paid.py`.
 - [ ] **`tools.py` è codice orfano**: i tool effettivi sono duplicati in `agent_engine.py` (e in `main.py`).
