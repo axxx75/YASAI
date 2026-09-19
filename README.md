@@ -199,7 +199,7 @@ python3 agent-router/main_paid.py      # router + agente con modelli a pagamento
 aichat -r code-expert "…"              # oppure gli agenti CLI: claude, openclaude, pi
 ```
 
-**Alternativa — Dev Container:** apri la cartella in VS Code con l'estensione Dev Containers; `devcontainer.json` usa lo stesso `Containerfile` e passa `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` dall'ambiente locale.
+**Alternativa — Dev Container:** apri la cartella in VS Code con l'estensione Dev Containers; `devcontainer.json` usa lo stesso `Containerfile`, passa `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` dall'ambiente locale e configura una sessione YASAI locale persistente nel volume `sandbox-yasai-memory`.
 
 ### Variabili d'ambiente principali (`.env.example`)
 

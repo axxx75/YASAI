@@ -14,11 +14,15 @@
     "source=sandbox-uv-cache,target=/home/dev/.cache/uv,type=volume",
     "source=sandbox-mcp-memory,target=/home/dev/.local/share/mcp,type=volume",
     "source=sandbox-claude-config,target=/home/dev/.claude,type=volume",
-    "source=sandbox-aichat-config,target=/home/dev/.config/aichat,type=volume"
+    "source=sandbox-aichat-config,target=/home/dev/.config/aichat,type=volume",
+    "source=sandbox-yasai-memory,target=/home/dev/.local/share/yasai,type=volume"
   ],
   "containerEnv": {
     "OPENROUTER_API_KEY": "${localEnv:OPENROUTER_API_KEY}",
     "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}",
-    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}"
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY}",
+    "YASAI_MEMORY_OWNER_ID": "local-user",
+    "YASAI_SESSION_ID": "default",
+    "YASAI_MEMORY_DB_PATH": "/home/dev/.local/share/yasai/conversations.db"
   }
 }
