@@ -24,7 +24,7 @@ services:
       - apparmor:unconfined
     volumes:
       # Mount del codice/progetti locali
-      - /root/yasai:/workspaces:z
+      - /home/axxx/yasai:/workspaces:z
       # Volumi persistenti per cache e memoria agenti MCP
       - dev-m2-cache:/home/dev/.m2
       - dev-uv-cache:/home/dev/.cache/uv

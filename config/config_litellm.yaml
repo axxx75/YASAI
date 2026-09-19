@@ -1,0 +1,18 @@
+model_list:
+  # Alias logico per i task veloci / autocompletamento
+  - model_name: fast-model
+    litellm_params:
+      model: openrouter/deepseek/deepseek-chat
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  # Alias logico per ragionamento complesso / agenti
+  - model_name: smart-model
+    litellm_params:
+      model: openrouter/anthropic/claude-3.7-sonnet
+      api_key: os.environ/OPENROUTER_API_KEY
+
+  # Fallback automatico se il principale va in errore o rate-limit
+  - model_name: smart-model
+    litellm_params:
+      model: openrouter/openai/gpt-4o
+      api_key: os.environ/OPENROUTER_API_KEY
