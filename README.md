@@ -386,7 +386,7 @@ Stato del progetto: sviluppo attivo, prime release (`Start rel 0.1`). Punti aper
 
 - [ ] **`tools.py` è codice orfano**: i tool effettivi sono duplicati in `agent_engine.py` (e in `main.py`).
 - [ ] **Nessuna memoria di conversazione** tra un prompt e il successivo: ogni richiesta riparte da zero.
-- [ ] **Ruolo `router` di aichat**: il file usa `$(cat /home/dev/.config/prompts/router-system.md)` dentro un heredoc con apici, quindi non viene espanso, e quel file non viene creato dal `Containerfile`.
+- [x] **Ruolo `router` di aichat**: il prompt vive in `config/prompts/router-system.md`; il `Containerfile` lo copia nell'immagine e lo aggiunge esplicitamente al file del ruolo.
 
 - [ ] **`config_litellm.yaml` e `config/instructlab/config.yaml` non sono agganciati** a compose/Containerfile; InstructLab non è installato nell'immagine.
 - [ ] **`.env.example`** definisce due volte `DEFAULT_MODEL` e `OPENAI_API_BASE` (vince l'ultima se il file viene "sourced").

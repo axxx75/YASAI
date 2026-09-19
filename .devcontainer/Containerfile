@@ -65,7 +65,10 @@ RUN --mount=type=cache,target=/root/.npm \
 
 RUN curl -fsSL https://github.com/sigoden/aichat/releases/latest/download/aichat-v$(curl -s https://api.github.com/repos/sigoden/aichat/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin
 
-RUN mkdir -p /home/dev/.config/aichat/roles
+RUN mkdir -p /home/dev/.config/aichat/roles \
+    /home/dev/.config/prompts
+
+COPY --chown=dev:dev config/prompts/router-system.md /home/dev/.config/prompts/router-system.md
 
 RUN cat << 'EOF' > /home/dev/.config/aichat/config.yaml
 model: openrouter:openai/gpt-4.1
@@ -103,8 +106,9 @@ RUN cat << 'EOF' > /home/dev/.config/aichat/roles/router.md
 model: openrouter:anthropic/claude-3.7-sonnet
 temperature: 0.2
 ---
-$(cat /home/dev/.config/prompts/router-system.md)
 EOF
+
+RUN cat /home/dev/.config/prompts/router-system.md >> /home/dev/.config/aichat/roles/router.md
 
 
 RUN pip install --no-cache-dir "litellm[proxy]" \
