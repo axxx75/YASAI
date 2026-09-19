@@ -3,6 +3,8 @@ from config import (
     MEMORY_DB_PATH,
     MEMORY_MAX_CONTENT_CHARS,
     MEMORY_MAX_MESSAGES,
+    MEMORY_OWNER_ID,
+    MEMORY_RETENTION_DAYS,
     MEMORY_SESSION_ID,
     ROUTER_MODEL_PAID,
     MODEL_CATALOG_PAID,
@@ -14,10 +16,14 @@ from memory import ConversationStore
 from schemas import TaskCategory
 
 def main():
+    if not MEMORY_OWNER_ID:
+        raise RuntimeError("YASAI_MEMORY_OWNER_ID è obbligatorio per isolare le sessioni tra utenti.")
     memory = ConversationStore(
         MEMORY_DB_PATH,
+        owner_id=MEMORY_OWNER_ID,
         max_messages=MEMORY_MAX_MESSAGES,
         max_content_chars=MEMORY_MAX_CONTENT_CHARS,
+        retention_days=MEMORY_RETENTION_DAYS,
     )
     session_id = memory.ensure_session(MEMORY_SESSION_ID)
 

@@ -215,6 +215,8 @@ aichat -r code-expert "…"              # oppure gli agenti CLI: claude, opencl
 | `YASAI_MEMORY_DB_PATH` | Percorso del database SQLite delle conversazioni |
 | `YASAI_MEMORY_MAX_MESSAGES` | Numero massimo di messaggi conservati per sessione |
 | `YASAI_MEMORY_MAX_CONTENT_CHARS` | Dimensione massima di un singolo messaggio salvato |
+| `YASAI_MEMORY_OWNER_ID` | Identità obbligatoria del proprietario; isola sessioni con lo stesso ID |
+| `YASAI_MEMORY_RETENTION_DAYS` | Giorni di inattività prima della cancellazione automatica |
 | `YASAI_SESSION_ID` | Sessione da riprendere all'avvio (default: `default`) |
 
 > ⚠️ `.env` è in `.gitignore`. Non committare mai chiavi reali.
@@ -247,7 +249,9 @@ prompt e le risposte finali della sessione. La cronologia recente viene passata
 sia al router, per interpretare richieste contestuali, sia al modello scelto. I
 messaggi interni dei tool non vengono conservati. Il database applica una
 finestra massima configurabile e rimuove i formati di token più comuni prima
-del salvataggio.
+del salvataggio. Le sessioni sono separate per proprietario, il file SQLite e
+la sua directory usano permessi locali restrittivi e le sessioni inattive
+vengono eliminate secondo la retention configurata.
 
 - `/new` crea e seleziona una nuova sessione;
 - `/clear` cancella la cronologia della sessione corrente;

@@ -15,6 +15,8 @@ MEMORY_DB_PATH = os.getenv(
 )
 MEMORY_MAX_MESSAGES = int(os.getenv("YASAI_MEMORY_MAX_MESSAGES", "20"))
 MEMORY_MAX_CONTENT_CHARS = int(os.getenv("YASAI_MEMORY_MAX_CONTENT_CHARS", "20000"))
+MEMORY_RETENTION_DAYS = int(os.getenv("YASAI_MEMORY_RETENTION_DAYS", "30"))
+MEMORY_OWNER_ID = os.getenv("YASAI_MEMORY_OWNER_ID", "").strip()
 MEMORY_SESSION_ID = os.getenv("YASAI_SESSION_ID", "default").strip() or "default"
 
 def fetch_all_models() -> list[dict]:
