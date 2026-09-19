@@ -72,8 +72,7 @@ def main():
                 )
 
             if response:
-                memory.append(session_id, "user", user_input)
-                memory.append(session_id, "assistant", response)
+                memory.append_exchange(session_id, user_input, response)
 
         except (KeyboardInterrupt, EOFError):
             print("\nChiusura sessione.")

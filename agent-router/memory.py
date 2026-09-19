@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-DEFAULT_SESSION_ID = "default"
 _SESSION_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
 
 # These patterns cover the provider credentials used by this project and the
@@ -149,6 +148,46 @@ class ConversationStore:
                 VALUES (?, ?, ?, ?)
                 """,
                 (session_id, role, safe_content, now),
+            )
+            connection.execute(
+                """
+                DELETE FROM messages
+                WHERE session_id = ?
+                  AND id NOT IN (
+                      SELECT id FROM messages
+                      WHERE session_id = ?
+                      ORDER BY id DESC
+                      LIMIT ?
+                  )
+                """,
+                (session_id, session_id, self.max_messages),
+            )
+            connection.execute(
+                "UPDATE sessions SET updated_at = ? WHERE id = ?",
+                (now, session_id),
+            )
+
+    def append_exchange(self, session_id: str, user_content: str, assistant_content: str) -> None:
+        """Persist one completed user/assistant turn in a single transaction."""
+        session_id = self._validate_session_id(session_id)
+        if not user_content.strip() or not assistant_content.strip():
+            return
+
+        self.ensure_session(session_id)
+        user_content = redact_sensitive_content(user_content)[: self.max_content_chars]
+        assistant_content = redact_sensitive_content(assistant_content)[: self.max_content_chars]
+        now = self._now()
+
+        with self._connect() as connection:
+            connection.executemany(
+                """
+                INSERT INTO messages (session_id, role, content, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    (session_id, "user", user_content, now),
+                    (session_id, "assistant", assistant_content, now),
+                ),
             )
             connection.execute(
                 """

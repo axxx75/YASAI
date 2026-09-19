@@ -212,6 +212,10 @@ aichat -r code-expert "…"              # oppure gli agenti CLI: claude, opencl
 | `OLLAMA_HOST` | Modelli locali via `host.docker.internal:11434` |
 | `GITHUB_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO` | `gh` e integrazioni GitHub |
 | `HF_TOKEN`, `ILAB_REMOTE_*` | Hugging Face / InstructLab (configurazione predisposta) |
+| `YASAI_MEMORY_DB_PATH` | Percorso del database SQLite delle conversazioni |
+| `YASAI_MEMORY_MAX_MESSAGES` | Numero massimo di messaggi conservati per sessione |
+| `YASAI_MEMORY_MAX_CONTENT_CHARS` | Dimensione massima di un singolo messaggio salvato |
+| `YASAI_SESSION_ID` | Sessione da riprendere all'avvio (default: `default`) |
 
 > ⚠️ `.env` è in `.gitignore`. Non committare mai chiavi reali.
 
@@ -237,6 +241,19 @@ Un piccolo motore agentico CLI in [`agent-router/`](agent-router/). Dipende da `
 Il pool **Free** è scoperto a runtime: si interroga `GET /models` e si tengono i modelli con `pricing.prompt == "0"` e `pricing.completion == "0"` (quindi la dimensione del pool varia nel tempo). Lo stesso elenco si vede con `python3 test/get_free_models.py`.
 
 **3. Esecuzione.** Solo `coding` e `reasoning` entrano nel **ciclo ReAct** (`run_agent_loop`, max **8 turni**, un solo tool per turno). `general` e `fast_check` fanno una singola chiamata in streaming. Su errore **HTTP 429** si passa al modello successivo della lista.
+
+**4. Memoria conversazionale.** Entrambi gli entrypoint salvano in SQLite i
+prompt e le risposte finali della sessione. La cronologia recente viene passata
+sia al router, per interpretare richieste contestuali, sia al modello scelto. I
+messaggi interni dei tool non vengono conservati. Il database applica una
+finestra massima configurabile e rimuove i formati di token più comuni prima
+del salvataggio.
+
+- `/new` crea e seleziona una nuova sessione;
+- `/clear` cancella la cronologia della sessione corrente;
+- `YASAI_SESSION_ID` permette di selezionare una sessione nota all'avvio;
+- il volume `dev-yasai-memory` conserva il database tra le ricreazioni del
+  container.
 
 **Tool esposti al modello** (sintassi testuale nel system prompt):
 
