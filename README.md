@@ -1,15 +1,25 @@
 <div align="center">
 
 # 🧪 YASAI
-### **Y**et **A**nother **S**imple **A**gentic **I**nfrastructure
-*Un laboratorio agentico leggero, deterministico e containerizzato per lo sviluppo assistito da AI.*
+### **Y**et **A**nother **S**andbox **AI**
+*Un laboratorio agentico solido e programmabile per lo sviluppo assistito da AI — tutto in un unico container, non-root e ristretto.*
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Docker Compliant](https://img.shields.io/badge/docker-ready-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![OpenRouter Integrated](https://img.shields.io/badge/OpenRouter-API-6466E9.svg?style=for-the-badge&logo=openai&logoColor=white)](https://openrouter.ai/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-container_unico-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/)
+[![Fedora](https://img.shields.io/badge/Fedora-41-51A2DA?style=for-the-badge&logo=fedora&logoColor=white)](https://fedoraproject.org/)
+[![Python](https://img.shields.io/badge/Python-3-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-npm-5FA04E?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![OpenJDK](https://img.shields.io/badge/OpenJDK-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Maven](https://img.shields.io/badge/Maven-build-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)](https://maven.apache.org/)
+[![uv](https://img.shields.io/badge/uv-Python_tooling-DE5FE9?style=for-the-badge&logo=uv&logoColor=white)](https://docs.astral.sh/uv/)
 
-[Caratteristiche](#-caratteristiche-chiave) • [Architettura](#-architettura-del-sistema) • [Requisiti](#-requisiti) • [Quickstart Docker](#-quickstart-docker-sandbox-ristretta) • [Configurazione](#-modalità-di-esecuzione)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-multi--model_API-6467F2?style=for-the-badge&logo=openrouter&logoColor=white)](https://openrouter.ai/)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-agent-D97757?style=for-the-badge&logo=claude&logoColor=white)](https://docs.claude.com)
+[![MCP](https://img.shields.io/badge/MCP-servers-000000?style=for-the-badge&logo=modelcontextprotocol&logoColor=white)](https://modelcontextprotocol.io/)
+[![Ollama](https://img.shields.io/badge/Ollama-LLM_locali-000000?style=for-the-badge&logo=ollama&logoColor=white)](https://ollama.com/)
+[![Pydantic](https://img.shields.io/badge/Pydantic-schemas-E92063?style=for-the-badge&logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
+[![GitHub CLI](https://img.shields.io/badge/GitHub_CLI-gh-181717?style=for-the-badge&logo=github&logoColor=white)](https://cli.github.com/)
+
+[Cos'è](#-cosè-yasai) • [Cosa c'è dentro](#-cosa-cè-dentro-il-container) • [Architettura](#-architettura) • [Quickstart](#-quickstart) • [Agent router](#-agent-router-python) • [Sicurezza](#-modello-di-sicurezza-stato-attuale) • [Limiti noti](#-limiti-noti-e-roadmap)
 
 ---
 
@@ -17,143 +27,342 @@
 
 ## 📌 Cos'è YASAI?
 
-**YASAI** è un'infrastruttura agentica CLI progettata per trasformare modelli LLM generici in **assistenti di sviluppo autonomi** legati al tuo workspace locale. 
+**YASAI** è una **sandbox agentica per lo sviluppo con AI**: un singolo container (Fedora 41, utente non-root `dev`, UID 1000) che raccoglie in un posto solo **più agenti di coding da terminale**, i loro **server MCP**, un **gateway/proxy LLM** e un piccolo **router Python con ciclo ReAct**, tutti configurati per parlare con modelli via **OpenRouter** (o con modelli locali via Ollama).
 
-Ispirato a strumenti come Claude Code o Replit Agent, YASAI integra un **Router semantico a due ingressi (Free / Paid)** con fallback automatico e un ciclo **ReAct (Reasoning + Acting)** che consente all'agente di esplorare il file system, modificare file di codice ed eseguire comandi shell in sicurezza.
+L'idea: gli agenti possono leggere, scrivere ed eseguire comandi — ma **dentro il container**, con il workspace montato dall'host come unico ponte verso la macchina reale.
 
----
-
-## 🚀 Caratteristiche Chiave
-
-* **🤖 Dynamic Model Routing & Triage:**
-  * **Triage Automatico:** Classifica le richieste in categorie (`coding`, `reasoning`, `general`, `fast_check`) prima dell'esecuzione.
-  * **Dual Engine (Free vs Paid):** Separazione netta tra un ambiente di **testing a costo zero** (con rollover su 25+ modelli gratuiti di OpenRouter) e un ambiente di **produzione ad alta affidabilità** (Claude 3.5 Sonnet, DeepSeek R1, GPT-4o Mini).
-* **🔄 ReAct Agent Loop Integrato:**
-  * Ciclo di esecuzione iterativo per l'analisi dei problemi, la lettura dei sorgenti, la scrittura delle modifiche e la verifica automatica tramite comandi di test.
-* **🔒 Sandbox Docker Ristretta:**
-  * Isolamento completo dell'ambiente di esecuzione: l'agente opera su volumi Docker montati con risorse limitate (`CPU`, `Memory`, `PIDs`) prevenendo modifiche indesiderate al sistema host.
-* **🛠️ Tooling Engine Nativo:**
-  * `[LIST_FILES]`: Esplorazione della struttura di progetto con filtri per `.gitignore` e file binari.
-  * `[READ_FILE]`: Lettura sicura del contenuto dei file sorgente.
-  * `[WRITE_FILE]`: Scrittura e refactoring atomico del codice.
-  * `[RUN_CMD]`: Esecuzione di comandi shell isolati (es. `pytest`, `python`, `git status`).
+> ℹ️ Il livello di isolamento effettivo dipende dalle opzioni di runtime del container. Vedi [Modello di sicurezza (stato attuale)](#-modello-di-sicurezza-stato-attuale) per cosa è applicato oggi e cosa no.
 
 ---
 
-## 🏗️ Architettura del Sistema
+## 🧰 Cosa c'è dentro il container
 
-```text
-                                 ┌──────────────────────────┐
-                                 │   Richiesta Utente CLI   │
-                                 └────────────┬─────────────┘
-                                              │
-                                              ▼
-                                 ┌──────────────────────────┐
-                                 │   Dynamic Triage Router  │
-                                 └───────┬──────────┬───────┘
-                                         │          │
-                         ┌───────────────┘          └───────────────┐
-                         ▼                                          ▼
-           ┌───────────────────────────┐              ┌───────────────────────────┐
-           │     MODE: MAIN_FREE       │              │     MODE: MAIN_PAID       │
-           │ (Rollover 25+ Free Models)│              │  (Claude 3.5 / DeepSeek)  │
-           └─────────────┬─────────────┘              └─────────────┬─────────────┘
-                         │                                          │
-                         └───────────────────┬──────────────────────┘
-                                             │
-                                             ▼
-                               ┌───────────────────────────┐
-                               │     ReAct Agent Loop      │
-                               │  (agent_engine.py / Tools) │
-                               └─────────────┬─────────────┘
-                                             │
-                       ┌─────────────────────┼─────────────────────┐
-                       ▼                     ▼                     ▼
-               ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
-               │ READ / WRITE  │     │  LIST FILES   │     │  RUN CMD      │
-               │ File System   │     │ Workspace     │     │ Shell Sandbox │
-               └───────────────┘     └───────────────┘     └───────────────┘
+Tutto quanto segue è derivato da [`.devcontainer/Containerfile`](.devcontainer/Containerfile).
 
+### Agenti e CLI AI
 
-## 📋 Struttura del Progetto
+| Componente | Ruolo | Come viene installato |
+|---|---|---|
+| **Claude Code** | Agente di coding da terminale | installer ufficiale `claude.ai/install.sh` (utente `dev`) |
+| **SuperClaude** | Framework di comandi/comportamenti sopra Claude Code | `pipx install superclaude` + `superclaude install` |
+| **OpenClaude** | CLI di coding-agent open source per provider cloud e locali (OpenAI-compatibili, Ollama…) | `npm i -g @gitlawb/openclaude@latest` |
+| **Pi coding agent** | Harness minimale da terminale (tool base: read/write/edit/bash) | `npm i -g @earendil-works/pi-coding-agent` (prefix `~/.local`) |
+| **aichat** | CLI LLM "all-in-one" in Rust, con ruoli pre-configurati | binario `x86_64-unknown-linux-musl` dalle release GitHub |
+| **LiteLLM** (`litellm[proxy]`) | Gateway/proxy LLM OpenAI-compatibile | `pip install` (Python di sistema) |
+| **backlog.md** | Gestione backlog/task in Markdown | `npm i -g backlog.md` |
+
+### Server MCP pre-registrati
+
+| Server | Registrato tramite |
+|---|---|
+| `sequential-thinking`, `context7`, `serena`, `playwright` | `superclaude mcp --servers …` |
+| `memory` (`@modelcontextprotocol/server-memory`) | `claude mcp add --scope user` |
+| `mattpocock-skills` (`@mattpocock/skills`) | `claude mcp add --scope user` |
+| `atlassian` (remoto, `https://mcp.atlassian.com/v1/mcp`) | `claude mcp add --transport http` |
+
+### Toolchain di sviluppo
+
+`git` · `gh` (GitHub CLI) · `jq` · `curl` · `python3` + `pip` + `pipx` + `uv` · `nodejs` + `npm` · `java-21-openjdk-devel` + `maven` · `vim-minimal` · `nano` · `openssh-clients` · `fuse3` + `fuse-overlayfs`
+
+### Ruoli e alias `aichat` (pre-configurati)
+
+| Ruolo | Modello | Temperatura | Scopo |
+|---|---|---|---|
+| `code-expert` | `openrouter:anthropic/claude-3.7-sonnet` | 0.2 | Senior Software Engineer, risposte dirette |
+| `refactor` | `openrouter:deepseek/deepseek-r1` | 0.1 | Analisi colli di bottiglia/sicurezza e refactoring |
+| `router` | `openrouter:anthropic/claude-3.7-sonnet` | 0.2 | Triage (vedi [limiti noti](#-limiti-noti-e-roadmap)) |
+
+Modello di default di aichat: `openrouter:openai/gpt-4.1`. Alias di shell: `ai-router`, `ai-fast` (Gemini 2.0 Flash), `ai-deep` (DeepSeek R1), `ai-coder`.
+
+### Volumi persistenti
+
+`~/.m2` · `~/.cache/uv` · `~/.local/share/mcp` (memoria MCP) · `~/.claude` (config Claude Code) — più `~/.config/aichat` se usi il Dev Container.
+
+---
+
+## 🏗️ Architettura
+
+### Livelli del laboratorio
+
+```mermaid
+flowchart TB
+    subgraph HOST["Host (Docker / Podman)"]
+        ENV[".env<br/>chiavi API"]
+        WS["Workspace host<br/>montato su /workspaces"]
+        OLL["Ollama (opzionale)<br/>host.docker.internal:11434"]
+    end
+
+    subgraph CTR["Container 'yasai' — Fedora 41 — utente dev (UID 1000)"]
+        direction TB
+        subgraph AG["Agenti e CLI"]
+            CC["Claude Code<br/>+ SuperClaude"]
+            OC["OpenClaude"]
+            PI["Pi coding agent"]
+            AI["aichat<br/>(ruoli code-expert / refactor / router)"]
+            AR["agent-router (Python)<br/>triage + ciclo ReAct"]
+        end
+        MCP["Server MCP<br/>context7 · serena · playwright<br/>sequential-thinking · memory · atlassian"]
+        LL["LiteLLM CLI / proxy"]
+        TC["Toolchain: git · gh · uv · Node · Java 21 · Maven"]
+    end
+
+    OR["OpenRouter API<br/>openrouter.ai/api/v1"]
+
+    ENV --> CTR
+    WS <--> CTR
+    CC --- MCP
+    AG --> OR
+    AG -.-> OLL
+    LL --> OR
+```
+
+### Flusso dell'agent-router
+
+```mermaid
+flowchart TD
+    U["Prompt utente (CLI)"] --> T["analyze_and_route()<br/>LLM di triage, temperature 0"]
+    T -->|"JSON valido"| C{"Categoria"}
+    T -->|"tutti i modelli falliscono"| FB["Fallback: coding<br/>confidence 0.5"]
+    FB --> RL
+    C -->|"coding / reasoning"| RL["run_agent_loop()<br/>ReAct, max 8 turni"]
+    C -->|"general / fast_check"| ST["Singola chiamata<br/>in streaming"]
+
+    RL --> TL{"Tool richiesto?"}
+    TL -->|"LIST_FILES"| T1["Elenco file (max 100)"]
+    TL -->|"READ_FILE"| T2["Lettura file"]
+    TL -->|"WRITE_FILE"| T3["Scrittura file"]
+    TL -->|"RUN_CMD"| T4["Shell, timeout 30 s"]
+    TL -->|"nessuno"| DONE["Task completato"]
+    T1 & T2 & T3 & T4 --> RL
+```
+
+---
+
+## 📋 Struttura del repository
 
 ```text
 YASAI/
-├── config.py          # Gestione chiavi API, scopritore modelli OpenRouter e cataloghi (Free/Paid)
-├── router.py          # Classificazione e Triage delle query dell'utente
-├── schemas.py         # Data models e enumerazioni (Pydantic / dataclasses)
-├── agent_engine.py    # ReAct Loop, parser della sintassi dei tool ed esecuzione comandi
-├── main_free.py       # Entrypoint CLI per la modalità testing/esperimenti gratuiti
-├── main_paid.py       # Entrypoint CLI per la modalità produzione/lavoro reale
-├── Dockerfile         # Dockerfile sandbox ristretto e privo di privilegi root
-└── compose.yaml       # Configurazione Docker Compose con limiti di risorse
+├── .devcontainer/
+│   ├── Containerfile         # Immagine: Fedora 41 + agenti + MCP + toolchain
+│   └── devcontainer.json     # Ingresso alternativo: VS Code Dev Containers
+├── agent-router/
+│   ├── config.py             # Chiave/URL OpenRouter, discovery modelli, cataloghi Free/Paid
+│   ├── router.py             # Triage della richiesta → categoria + modello
+│   ├── schemas.py            # TaskCategory (Enum) e RoutingDecision (Pydantic)
+│   ├── agent_engine.py       # Ciclo ReAct, streaming, tool, rollover su 429
+│   ├── main_free.py          # Entrypoint CLI — pool di modelli gratuiti
+│   ├── main_paid.py          # Entrypoint CLI — catalogo a pagamento
+│   ├── main.py               # Versione monolitica precedente (legacy, vedi limiti noti)
+│   └── tools.py              # Duplicato dei tool (non importato da nessun modulo)
+├── config/
+│   ├── config_litellm.yaml   # Alias LiteLLM: fast-model / smart-model (+ fallback)
+│   └── instructlab/config.yaml
+├── test/
+│   ├── test-stack.sh         # Smoke test del container (tool, aichat, LiteLLM, MCP)
+│   └── get_free_models.py    # Elenca i modelli gratuiti attivi su OpenRouter
+├── docker-compose.yml        # Servizio `ai-lab-dev` (container `yasai`)
+└── .env.example              # Template variabili d'ambiente
+```
 
+---
 
-## 📦 Quickstart Docker (Sandbox Ristretta)
-Il metodo consigliato per eseguire YASAI in totale sicurezza è all'interno di un container Docker con risorse limitate e senza privilegi root.
+## 🚀 Quickstart
 
-1. Clona il repository
-Bash
-git clone [https://github.com/axxx75/YASAI.git](https://github.com/axxx75/YASAI.git)
+**Prerequisiti:** Docker con Compose (o Podman: il file si chiama `Containerfile` e il mount usa il suffisso SELinux `:z`) e una chiave [OpenRouter](https://openrouter.ai/).
+
+```bash
+# 1. Clona
+git clone https://github.com/axxx75/YASAI.git
 cd YASAI
-2. Configura le variabili d'ambiente
-Crea un file .env nella radice del progetto:
 
-Bash
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-3. Avvia l'ambiente isolato
-Modalità Free (Testing):
+# 2. Variabili d'ambiente
+cp .env.example .env
+#    → compila almeno OPENROUTER_API_KEY (GITHUB_TOKEN solo se ti serve gh/git via token)
 
-Bash
-docker compose run --rm yasai-free
-Modalità Paid (Produzione):
+# 3. Adatta il mount del workspace in docker-compose.yml
+#    (oggi punta a /home/axxx/yasai:/workspaces:z — sostituiscilo con il tuo path)
 
-Bash
-docker compose run --rm yasai-paid
-Nota di Sicurezza: Il container esegue con un utente non-root (appuser), mem_limit fissato a 512MB e CPU limitata a 1.0 core per evitare processi runaway o esecuzioni dannose sulla macchina host.
+# 4. Build e avvio (il container resta vivo con `sleep infinity`)
+docker compose build
+docker compose up -d
 
-##💻 Configurazione ed Esecuzione Locale (Senza Docker)
-Se preferisci eseguire l'infrastruttura direttamente nel tuo terminale locale:
+# 5. Entra nel laboratorio
+docker compose exec ai-lab-dev bash
+```
 
-Bash
-# 1. Crea e attiva un ambiente virtuale
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+Dentro il container:
 
-# 2. Installa le dipendenze
-pip install -r requirements.txt
+```bash
+bash test/test-stack.sh                # verifica binari, aichat, LiteLLM e server MCP
+python3 agent-router/main_free.py      # router + agente con modelli gratuiti
+python3 agent-router/main_paid.py      # router + agente con modelli a pagamento
+aichat -r code-expert "…"              # oppure gli agenti CLI: claude, openclaude, pi
+```
 
-# 3. Esporta la chiave API di OpenRouter
-export OPENROUTER_API_KEY="la-tua-chiave-api"
+**Alternativa — Dev Container:** apri la cartella in VS Code con l'estensione Dev Containers; `devcontainer.json` usa lo stesso `Containerfile` e passa `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` dall'ambiente locale.
 
-# 4. Avvia la CLI desiderata
-python main_free.py   # Per la modalità gratuita con rollover
-# oppure
-python main_paid.py   # Per la modalità produzione con Claude/GPT-4o
+### Variabili d'ambiente principali (`.env.example`)
 
-##🧪 Esempio di Utilizzo CLI
-Plaintext
+| Variabile | Usata da |
+|---|---|
+| `OPENROUTER_API_KEY` | `agent-router`, aichat, LiteLLM, compose |
+| `OPENAI_API_BASE` / `OPENAI_API_KEY` | SDK OpenAI-compatibili, LiteLLM |
+| `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` | Claude Code instradato su OpenRouter |
+| `CLAUDE_CODE_USE_OPENAI`, `OPENAI_BASE_URL`, `OPENAI_MODEL` | OpenClaude (es. Ollama locale) |
+| `OLLAMA_HOST` | Modelli locali via `host.docker.internal:11434` |
+| `GITHUB_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO` | `gh` e integrazioni GitHub |
+| `HF_TOKEN`, `ILAB_REMOTE_*` | Hugging Face / InstructLab (configurazione predisposta) |
+
+> ⚠️ `.env` è in `.gitignore`. Non committare mai chiavi reali.
+
+---
+
+## 🧭 Agent router (Python)
+
+Un piccolo motore agentico CLI in [`agent-router/`](agent-router/). Dipende da `requests` e `pydantic`; comunica con OpenRouter (`/chat/completions`, `/models`).
+
+**1. Triage.** Un modello "router" classifica il prompt in `coding`, `reasoning`, `general` o `fast_check` rispondendo solo con JSON (`temperature: 0`, timeout 10 s). Se il primo modello fallisce si scorre la lista di fallback; se falliscono tutti, si ricade su `coding` con `confidence = 0.5`. In caso di successo `confidence` vale un costante `0.9` (non è calcolata dal modello).
+
+**2. Selezione modello.** La categoria mappa su un catalogo:
+
+| Categoria | 💰 Paid | 🆓 Free |
+|---|---|---|
+| Router (triage) | `openai/gpt-4o-mini` | primo modello free con `flash` / `mini` / `small` nell'id (default `openrouter/free`) |
+| `coding` | `anthropic/claude-3.5-sonnet` | keyword `code` / `qwen` / `gemma` |
+| `reasoning` | `deepseek/deepseek-r1` | keyword `deepseek` / `nemotron` / `reasoning` |
+| `general` | `openai/gpt-4o-mini` | keyword `gemma` / `nemotron` / `glm` |
+| `fast_check` | `google/gemini-flash-1.5` | modello del router |
+| Catena di fallback | `claude-3.5-sonnet` → `gpt-4o-mini` → `deepseek-chat` | tutti i modelli free rilevati |
+
+Il pool **Free** è scoperto a runtime: si interroga `GET /models` e si tengono i modelli con `pricing.prompt == "0"` e `pricing.completion == "0"` (quindi la dimensione del pool varia nel tempo). Lo stesso elenco si vede con `python3 test/get_free_models.py`.
+
+**3. Esecuzione.** Solo `coding` e `reasoning` entrano nel **ciclo ReAct** (`run_agent_loop`, max **8 turni**, un solo tool per turno). `general` e `fast_check` fanno una singola chiamata in streaming. Su errore **HTTP 429** si passa al modello successivo della lista.
+
+**Tool esposti al modello** (sintassi testuale nel system prompt):
+
+| Tool | Sintassi | Comportamento |
+|---|---|---|
+| `LIST_FILES` | `[LIST_FILES]` | Elenca fino a 100 file, escludendo `.git`, `__pycache__`, `.venv`, `node_modules`, `.pytest_cache`, `dist`, `build` |
+| `READ_FILE` | `[READ_FILE: percorso]` | Legge un file UTF-8 |
+| `WRITE_FILE` | `[WRITE_FILE: percorso]` + blocco `<<< … >>>` | Crea/sovrascrive un file (crea le directory intermedie) |
+| `RUN_CMD` | `[RUN_CMD: comando]` | Esegue in shell, **timeout 30 s**, output troncato a 3000 caratteri |
+
+Esempio di sessione:
+
+```text
 =================================================================
   AI LAB - Agentic CLI Engine [MODE: PAID / PRODUCTION]
   Primary Coding Model: anthropic/claude-3.5-sonnet
   Digita 'exit' o 'quit' per uscire.
 =================================================================
 
-paid-agent> Crea una suite di test con pytest per la funzione di triage in router.py
+paid-agent> Crea test pytest per il triage in router.py
 
 [ROUTER PAID]: Categoria -> CODING | Modello Target -> anthropic/claude-3.5-sonnet
-[ROUTER REASONING]: Richiesta di creazione test unitari in Python per il modulo router.py
-
 --- Turno 1/8 | Modello: [anthropic/claude-3.5-sonnet] ---
-[TOOL EXECUTION]: Lettura file 'router.py'...
-[TOOL EXECUTION]: Scrittura file 'tests/test_router.py'...
-[TOOL EXECUTION]: Esecuzione comando shell '$ pytest tests/test_router.py'...
+[TOOL EXECUTION]: Lettura file 'agent-router/router.py'...
+```
 
---- Output Pytest ---
-2 passed in 0.35s
---------------------
+### Alias LiteLLM (`config/config_litellm.yaml`)
 
-[AGENTE]: La suite di test è stata creata ed eseguita con successo. Tutti i test sono passati!
+| Alias | Modello (via OpenRouter) | Fallback |
+|---|---|---|
+| `fast-model` | `deepseek/deepseek-chat` | — |
+| `smart-model` | `anthropic/claude-3.7-sonnet` | `openai/gpt-4o` |
 
-##🛡️ Licenza
-Questo progetto è distribuito sotto licenza MIT. Consulta il file LICENSE per ulteriori dettagli.
+Avvio manuale del proxy: `litellm --config config/config_litellm.yaml` (porta di default 4000).
+
+---
+
+## 🔒 Modello di sicurezza (stato attuale)
+
+Verificato leggendo `docker-compose.yml`, `devcontainer.json` e `Containerfile`.
+
+| Aspetto | Stato | Dettaglio |
+|---|---|---|
+| Utente non-root | ✅ applicato | `user: "1000:1000"` (utente `dev`) |
+| Segreti fuori da Git | ✅ applicato | `.env` e `*.key`/`*.pem` in `.gitignore` |
+| Superficie host esposta | ✅ ridotta | un solo mount di workspace (`:z`) + volumi nominati per le cache |
+| Timeout sui comandi dell'agente | ✅ applicato | 30 s per `RUN_CMD`, 8 turni massimi |
+| Limiti risorse (CPU / RAM / PID) | ❌ **non impostati** | Docker, di default, non applica vincoli di risorse al container |
+| Capability ridotte | ❌ **ampliate** | `cap_add: SYS_ADMIN` (di default Docker la esclude), `/dev/fuse` esposto |
+| Profilo AppArmor | ❌ **disattivato** | `apparmor:unconfined` |
+| Rete | ⚠️ aperta | necessaria per raggiungere OpenRouter e i server MCP |
+| Confinamento percorsi dei tool | ⚠️ assente | i tool operano su qualsiasi percorso accessibile all'utente `dev`; l'isolamento è quello del container |
+| Segreti visibili all'agente | ⚠️ sì | `OPENROUTER_API_KEY` e `GITHUB_TOKEN` sono variabili d'ambiente del container: `RUN_CMD` può leggerle |
+
+`fuse-overlayfs` e `SYS_ADMIN` fanno pensare a un uso per container annidati/mount FUSE (deduzione, non dichiarata nel repo). Se non ti servono, puoi restringere il container così:
+
+```yaml
+# Proposta di hardening — valori d'esempio da tarare, NON ancora nel repo
+services:
+  ai-lab-dev:
+    # rimuovi: devices (/dev/fuse), cap_add: SYS_ADMIN, security_opt: apparmor:unconfined
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+          pids: 512
+```
+
+Un'opzione ulteriore è passare all'agente solo le chiavi strettamente necessarie (niente `GITHUB_TOKEN` se non serve) o usare un token a scope minimo.
+
+### Riproducibilità della build
+
+Diversi passaggi installano l'ultima versione disponibile (`aichat` da `releases/latest`, `@gitlawb/openclaude@latest`, `pipx install superclaude`, `pip install litellm[proxy]`). Per un laboratorio "solido" conviene **pinnare le versioni**. Nota: il 24 marzo 2026 due release PyPI di LiteLLM (1.82.7 e 1.82.8) sono state compromesse; l'avviso ufficiale è nel [blog LiteLLM](https://docs.litellm.ai/blog/security-update-march-2026).
+
+---
+
+## 🧪 Test
+
+| Script | Cosa verifica |
+|---|---|
+| `test/test-stack.sh` | 5 step: presenza binari (`aichat`, `litellm`, `claude`, `superclaude`, `uv`, `npm`), chiamata `aichat` su OpenRouter, ruoli `code-expert` e `refactor`, `litellm --version`, registrazione dei 7 server MCP |
+| `test/get_free_models.py` | Elenca i modelli con prezzo 0 su OpenRouter |
+
+---
+
+## 🚧 Limiti noti e roadmap
+
+Stato del progetto: sviluppo attivo, prime release (`Start rel 0.1`). Punti aperti individuati:
+
+- [ ] **Manca `requirements.txt`**: `requests` e `pydantic` non sono dichiarati (probabilmente arrivano come dipendenze transitive di LiteLLM — da verificare con una build pulita).
+- [ ] **`agent-router/` non è copiato nell'immagine** (nessun `COPY`/`ADD`): il codice è disponibile solo se la cartella montata su `/workspaces` contiene questo repository.
+- [ ] **Path host hard-coded** nel mount di `docker-compose.yml` (`/home/axxx/yasai`).
+- [ ] **`main.py` è legacy e non funzionante**: chiama `analyze_and_route()` con un solo argomento, mentre `router.py` ne richiede quattro. Usare `main_free.py` / `main_paid.py`.
+- [ ] **`tools.py` è codice orfano**: i tool effettivi sono duplicati in `agent_engine.py` (e in `main.py`).
+- [ ] **`config.py` chiama la rete all'import** (`GET /models`): l'avvio dipende da OpenRouter.
+- [ ] **Nessuna memoria di conversazione** tra un prompt e il successivo: ogni richiesta riparte da zero.
+- [ ] **Ruolo `router` di aichat**: il file usa `$(cat /home/dev/.config/prompts/router-system.md)` dentro un heredoc con apici, quindi non viene espanso, e quel file non viene creato dal `Containerfile`.
+- [ ] **Alias `ai-fast` / `ai-deep`** sono scritti in `custom_pompt.sh` (refuso) anziché `custom_prompt.sh`.
+- [ ] **`config_litellm.yaml` e `config/instructlab/config.yaml` non sono agganciati** a compose/Containerfile; InstructLab non è installato nell'immagine.
+- [ ] **`.env.example`** definisce due volte `DEFAULT_MODEL` e `OPENAI_API_BASE` (vince l'ultima se il file viene "sourced").
+- [ ] **Limiti di risorse e capability** (vedi [sicurezza](#-modello-di-sicurezza-stato-attuale)).
+- [ ] **Nessun file `LICENSE`** nel repository: aggiungerne uno e allineare la sezione Licenza.
+
+---
+
+## 📚 Riferimenti
+
+**Container e sicurezza**
+- Docker — [Resource constraints](https://docs.docker.com/engine/containers/resource_constraints/)
+- Docker — [Compose `deploy` (limits: cpus, memory, pids)](https://docs.docker.com/reference/compose-file/deploy/)
+- Docker — [Runtime privilege and Linux capabilities](https://docs.docker.com/engine/containers/run/#runtime-privilege-and-linux-capabilities)
+- LiteLLM — [Security update, marzo 2026](https://docs.litellm.ai/blog/security-update-march-2026)
+
+**Strumenti AI**
+- [OpenRouter](https://openrouter.ai/) · [LiteLLM docs](https://docs.litellm.ai/) · [aichat](https://github.com/sigoden/aichat)
+- [Claude Code / documentazione Claude](https://docs.claude.com) · [Model Context Protocol](https://modelcontextprotocol.io/)
+- [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) · [OpenClaude](https://github.com/Gitlawb/openclaude) · [Pi coding agent](https://github.com/earendil-works/pi) ([pi.dev](https://pi.dev/))
+
+**Badge e loghi:** [Shields.io](https://shields.io/) con slug [Simple Icons](https://simpleicons.org/).
+
+---
+
+## 🛡️ Licenza
+
+Da definire: al momento nel repository non è presente un file `LICENSE`.
