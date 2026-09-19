@@ -48,8 +48,8 @@ RUN echo 'export PS1="\[\e[1;35m\][AI-LAB]\[\e[0m\] \[\e[1;32m\]\u\[\e[0m\]:\[\e
     && echo 'alias ls="ls --color=auto"' >> /etc/profile.d/custom_prompt.sh \
     && echo 'alias ll="ls -la --color=auto"' >> /etc/profile.d/custom_prompt.sh \
     && echo 'alias ai-router="aichat -r router"' >> /etc/profile.d/custom_prompt.sh \
-    && echo 'alias ai-fast="aichat -m openrouter:google/gemini-2.0-flash-001"' >> /etc/profile.d/custom_pompt.sh \
-    && echo 'alias ai-deep="aichat -m openrouter:deepseek/deepseek-r1"'>> /etc/profile.d/custom_pompt.sh \
+    && echo 'alias ai-fast="aichat -m openrouter:google/gemini-2.0-flash-001"' >> /etc/profile.d/custom_prompt.sh \
+    && echo 'alias ai-deep="aichat -m openrouter:deepseek/deepseek-r1"'>> /etc/profile.d/custom_prompt.sh \
     && echo 'alias ai-coder="aichat -r code-expert"'>> /etc/profile.d/custom_prompt.sh \
     && chmod +x /etc/profile.d/custom_prompt.sh \
     && echo 'if [ -f /etc/profile.d/custom_prompt.sh ]; then . /etc/profile.d/custom_prompt.sh; fi' >> /home/dev/.bashrc \

@@ -326,18 +326,47 @@ Diversi passaggi installano l'ultima versione disponibile (`aichat` da `releases
 
 ---
 
+## 🧪 Alias comodi:
+
+```text
+# SANDBOX LAB-AI
+export AI_LAB_DIR="$(pwd)"
+export AI_LAB_COMPOSE="$AI_LAB_DIR/docker-compose.yml"
+
+# --- Gestione Lifecycle Container ---
+alias lab-up='docker compose -f $AI_LAB_COMPOSE up -d'
+alias lab-down='docker compose -f $AI_LAB_COMPOSE down'
+alias lab-restart='docker compose -f $AI_LAB_COMPOSE up -d --force-recreate'
+alias lab-build='DOCKER_BUILDKIT=1 docker compose -f $AI_LAB_COMPOSE build && docker compose -f $AI_LAB_COMPOSE up -d'
+alias lab-rebuild='DOCKER_BUILDKIT=1 docker compose -f $AI_LAB_COMPOSE build --no-cache && docker compose -f $AI_LAB_COMPOSE up -d'
+
+# --- Accesso Shell ---
+# Accesso standard come utente 'dev' (workspace predefinito)
+alias lab='docker exec -it -w /workspaces yasai /usr/local/bin/entrypoint.sh bash'
+
+# Accesso come 'root' per manutenzione pacchetti (es. apt/dnf)
+alias lab-root='docker exec -it -u root -w /workspaces yasai /usr/local/bin/entrypoint.sh bash'
+
+# --- Diagnostic & Monitoraggio ---
+alias lab-logs='docker logs -f --tail 100 yasai'
+alias lab-status='docker ps --filter "name=yasai"'
+
+```
+
+---
+
+
+
 ## 🚧 Limiti noti e roadmap
 
 Stato del progetto: sviluppo attivo, prime release (`Start rel 0.1`). Punti aperti individuati:
 
 - [ ] **`agent-router/` non è copiato nell'immagine** (nessun `COPY`/`ADD`): il codice è disponibile perche la cartella è montata su `/workspaces` e contiene questo repository.
-- [ ] **Path host hard-coded** nel mount di `docker-compose.yml` (`/home/axxx/yasai`).
-- [ ] **`main.py` è legacy e non funzionante**: chiama `analyze_and_route()` con un solo argomento, mentre `router.py` ne richiede quattro. Usare `main_free.py` / `main_paid.py`.
+
 - [ ] **`tools.py` è codice orfano**: i tool effettivi sono duplicati in `agent_engine.py` (e in `main.py`).
-- [ ] **`config.py` chiama la rete all'import** (`GET /models`): l'avvio dipende da OpenRouter.
 - [ ] **Nessuna memoria di conversazione** tra un prompt e il successivo: ogni richiesta riparte da zero.
 - [ ] **Ruolo `router` di aichat**: il file usa `$(cat /home/dev/.config/prompts/router-system.md)` dentro un heredoc con apici, quindi non viene espanso, e quel file non viene creato dal `Containerfile`.
-- [ ] **Alias `ai-fast` / `ai-deep`** sono scritti in `custom_pompt.sh` (refuso) anziché `custom_prompt.sh`.
+
 - [ ] **`config_litellm.yaml` e `config/instructlab/config.yaml` non sono agganciati** a compose/Containerfile; InstructLab non è installato nell'immagine.
 - [ ] **`.env.example`** definisce due volte `DEFAULT_MODEL` e `OPENAI_API_BASE` (vince l'ultima se il file viene "sourced").
 - [ ] **Limiti di risorse e capability** (vedi [sicurezza](#-modello-di-sicurezza-stato-attuale)).
