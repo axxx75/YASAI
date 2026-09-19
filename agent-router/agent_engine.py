@@ -1,25 +1,13 @@
-import sys
-import time
-import json
 import os
 import re
+import json
+import time
 import subprocess
 import requests
-from config import (
-    OPENROUTER_API_BASE,
-    OPENROUTER_API_KEY,
-    DEFAULT_HEADERS,
-    AVAILABLE_FREE_MODELS
-)
-from router import analyze_and_route
-from schemas import TaskCategory
+from config import OPENROUTER_API_BASE, OPENROUTER_API_KEY, DEFAULT_HEADERS
 
-# ==========================================
-# 1. TOOL ENGINE FOR WORKSPACE MANAGEMENT
-# ==========================================
-
+# --- TOOLS ---
 def list_files(path=".") -> str:
-    """Restituisce la lista relativa dei file nel workspace escludendo le directory di build/cache."""
     files_list = []
     ignore_dirs = {'.git', '__pycache__', '.venv', 'node_modules', '.pytest_cache', 'dist', 'build'}
     for root, dirs, files in os.walk(path):
@@ -30,26 +18,24 @@ def list_files(path=".") -> str:
     return "\n".join(files_list[:100]) if files_list else "Nessun file trovato."
 
 def read_file(filepath: str) -> str:
-    """Legge il contenuto di un file nel workspace."""
     try:
         with open(filepath.strip(), 'r', encoding='utf-8') as f:
             return f.read()
     except Exception as e:
-        return f"[TOOL ERROR]: Errore durante la lettura del file '{filepath}': {e}"
+        return f"[TOOL ERROR]: Errore lettura file '{filepath}': {e}"
 
 def write_file(filepath: str, content: str) -> str:
-    """Scrive o sovrascrive un file nel workspace creando le directory intermedie se necessario."""
     try:
         clean_path = filepath.strip()
-        os.makedirs(os.path.dirname(clean_path), exist_ok=True) if os.path.dirname(clean_path) else None
+        if os.path.dirname(clean_path):
+            os.makedirs(os.path.dirname(clean_path), exist_ok=True)
         with open(clean_path, 'w', encoding='utf-8') as f:
             f.write(content)
         return f"[TOOL SUCCESS]: File '{clean_path}' salvato con successo."
     except Exception as e:
-        return f"[TOOL ERROR]: Errore durante la scrittura del file '{filepath}': {e}"
+        return f"[TOOL ERROR]: Errore scrittura file '{filepath}': {e}"
 
 def run_command(cmd: str) -> str:
-    """Esegue un comando shell (es. pytest, python script.py, git status) nel workspace."""
     try:
         res = subprocess.run(cmd.strip(), shell=True, capture_output=True, text=True, timeout=30)
         output = res.stdout if res.stdout else res.stderr
@@ -58,11 +44,6 @@ def run_command(cmd: str) -> str:
         return "[TOOL ERROR]: Esecuzione comando terminata per timeout (30s)."
     except Exception as e:
         return f"[TOOL ERROR]: Impossibile eseguire il comando: {e}"
-
-
-# ==========================================
-# 2. PROMPT SYSTEM PER REACT AGENT
-# ==========================================
 
 CODING_AGENT_SYSTEM_PROMPT = """Sei un software engineer autonomo che opera via CLI nel workspace dell'utente.
 Hai a disposizione i seguenti STRUMENTI per interagire con il file system e l'ambiente:
@@ -88,13 +69,7 @@ REGOLE DI COMPORTAMENTO:
 - Puoi eseguire un solo blocco strumento per ogni turno o rispondere direttamente all'utente se il task è completato.
 """
 
-
-# ==========================================
-# 3. STREAMING & HTTP INFERENCE ENGINE
-# ==========================================
-
 def call_llm_stream(model: str, messages: list) -> str:
-    """Invia la conversazione a OpenRouter in streaming e ne restituisce il testo finale."""
     headers = {
         **DEFAULT_HEADERS,
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -137,18 +112,8 @@ def call_llm_stream(model: str, messages: list) -> str:
     print()
     return full_response
 
-
-# ==========================================
-# 4. REACT LOOP ENGINE
-# ==========================================
-
-def run_agent_loop(primary_model: str, user_prompt: str, max_turns: int = 8):
-    """
-    Esegue il loop agentico ReAct:
-    Invia il prompt all'LLM -> Rileva chiamata a Tool -> Esegue Tool -> Invia risultato all'LLM.
-    Include il rollover automatico sui modelli free in caso di rate limit (429).
-    """
-    models_to_try = [primary_model] + [m for m in AVAILABLE_FREE_MODELS if m != primary_model]
+def run_agent_loop(primary_model: str, user_prompt: str, fallback_models: list, max_turns: int = 8):
+    models_to_try = [primary_model] + [m for m in fallback_models if m != primary_model]
     
     messages = [
         {"role": "system", "content": CODING_AGENT_SYSTEM_PROMPT},
@@ -161,8 +126,6 @@ def run_agent_loop(primary_model: str, user_prompt: str, max_turns: int = 8):
         print(f"\n--- Turno {turn + 1}/{max_turns} | Modello: [{active_model}] ---")
         
         response_text = None
-        
-        # Tenta l'inferenza con rollover trasparente sui modelli free disponibili
         for model in models_to_try:
             try:
                 response_text = call_llm_stream(model, messages)
@@ -170,7 +133,7 @@ def run_agent_loop(primary_model: str, user_prompt: str, max_turns: int = 8):
                 break
             except requests.exceptions.HTTPError as e:
                 if "429" in str(e):
-                    print(f"\n[RATE LIMIT 429]: Modello '{model}' saturo. Passaggio al modello successivo...")
+                    print(f"\n[RATE LIMIT 429]: Modello '{model}' saturo. Fallback al successivo...")
                     time.sleep(1)
                     continue
                 else:
@@ -181,21 +144,18 @@ def run_agent_loop(primary_model: str, user_prompt: str, max_turns: int = 8):
                 break
 
         if not response_text:
-            print("\n[ERRORE FATALE]: Impossibile comunicare con i modelli free disponibili.\n")
+            print("\n[ERRORE FATALE]: Nessun modello disponibile.\n")
             return
 
         messages.append({"role": "assistant", "content": response_text})
 
-        # --- PARSING E ESECUZIONE STRUMENTI (TOOLS) ---
-
-        # 1. TOOL: LIST_FILES
+        # Exec tools
         if "[LIST_FILES]" in response_text:
             print("\n[TOOL EXECUTION]: Elenco file workspace...")
             res = list_files()
             messages.append({"role": "user", "content": f"[TOOL RESULT LIST_FILES]:\n{res}"})
             continue
 
-        # 2. TOOL: WRITE_FILE
         write_match = re.search(r'\[WRITE_FILE:\s*(.*?)\]\s*<<<\n(.*?)\n>>>', response_text, re.DOTALL)
         if write_match:
             filepath = write_match.group(1).strip()
@@ -205,7 +165,6 @@ def run_agent_loop(primary_model: str, user_prompt: str, max_turns: int = 8):
             messages.append({"role": "user", "content": res})
             continue
 
-        # 3. TOOL: READ_FILE
         read_match = re.search(r'\[READ_FILE:\s*(.*?)\]', response_text)
         if read_match:
             filepath = read_match.group(1).strip()
@@ -214,7 +173,6 @@ def run_agent_loop(primary_model: str, user_prompt: str, max_turns: int = 8):
             messages.append({"role": "user", "content": f"[TOOL RESULT READ_FILE '{filepath}']:\n{res}"})
             continue
 
-        # 4. TOOL: RUN_CMD
         cmd_match = re.search(r'\[RUN_CMD:\s*(.*?)\]', response_text)
         if cmd_match:
             cmd = cmd_match.group(1).strip()
@@ -223,50 +181,5 @@ def run_agent_loop(primary_model: str, user_prompt: str, max_turns: int = 8):
             messages.append({"role": "user", "content": f"[TOOL RESULT RUN_CMD '$ {cmd}']:\n{res}"})
             continue
 
-        # Nessun tool invocato: il task è concluso
         print("\n[AGENTE]: Task completato.")
         break
-
-
-# ==========================================
-# 5. REPL INTERACTIVE ENGINE
-# ==========================================
-
-def repl():
-    """Loop di interazione via CLI per l'Agentic Router."""
-    print("=" * 65)
-    print("  AI LAB - Agentic Coding Assistant & CLI Engine initialized")
-    print(f"  Modelli Free rilevati attivi: {len(AVAILABLE_FREE_MODELS)}")
-    print("  Digita 'exit' o 'quit' per uscire.")
-    print("=" * 65 + "\n")
-
-    if not OPENROUTER_API_KEY:
-        print("[WARNING]: OPENROUTER_API_KEY non trovata nell'ambiente!\n")
-
-    while True:
-        try:
-            user_input = input("ai-agent> ").strip()
-            if not user_input:
-                continue
-            if user_input.lower() in ["exit", "quit"]:
-                print("Chiusura agent harness.")
-                sys.exit(0)
-
-            # 1. Triage / Routing
-            decision = analyze_and_route(user_input)
-            print(f"\n[ROUTER]: Categoria -> {decision.category.value.upper()} | Modello Target -> {decision.selected_model}")
-            print(f"[ROUTER REASONING]: {decision.reasoning}")
-
-            # 2. Esecuzione via ReAct Loop per Coding/Reasoning, altrimenti conversazione diretta
-            if decision.category in [TaskCategory.CODING, TaskCategory.REASONING]:
-                run_agent_loop(decision.selected_model, user_input)
-            else:
-                # Task semplice / Fast Check / General
-                call_llm_stream(decision.selected_model, [{"role": "user", "content": user_input}])
-
-        except (KeyboardInterrupt, EOFError):
-            print("\nChiusura sessione.")
-            sys.exit(0)
-
-if __name__ == "__main__":
-    repl()

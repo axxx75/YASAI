@@ -1,14 +1,7 @@
 import json
 import re
 import requests
-from config import (
-    OPENROUTER_API_BASE,
-    OPENROUTER_API_KEY,
-    DEFAULT_HEADERS,
-    ROUTER_MODEL,
-    MODEL_CATALOG,
-    AVAILABLE_FREE_MODELS
-)
+from config import OPENROUTER_API_BASE, OPENROUTER_API_KEY, DEFAULT_HEADERS
 from schemas import RoutingDecision, TaskCategory
 
 ROUTER_SYSTEM_PROMPT = """Sei un router di triage per task AI. Il tuo unico compito è analizzare la richiesta dell'utente e classificarla in una delle seguenti categorie:
@@ -24,10 +17,10 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON valido con la seguente struttura:
 }
 """
 
-def analyze_and_route(user_prompt: str) -> RoutingDecision:
+def analyze_and_route(user_prompt: str, router_model: str, catalog: dict, candidate_fallback_models: list) -> RoutingDecision:
     """
-    Analizza il prompt dell'utente tentandolo sui modelli free disponibili.
-    Esegue il parsing flessibile del JSON per evitare errori 400 dovuti a response_format non supportati.
+    Analizza il prompt dell'utente accettando in modo dinamico il modello di router,
+    il catalogo di riferimento e la lista di fallback (free o paid).
     """
     headers = {
         **DEFAULT_HEADERS,
@@ -35,8 +28,7 @@ def analyze_and_route(user_prompt: str) -> RoutingDecision:
         "Content-Type": "application/json"
     }
 
-    # Prova prima il ROUTER_MODEL, poi scorre gli altri modelli free come fallback
-    candidate_models = [ROUTER_MODEL] + [m for m in AVAILABLE_FREE_MODELS if m != ROUTER_MODEL]
+    candidate_models = [router_model] + [m for m in candidate_fallback_models if m != router_model]
 
     for model in candidate_models:
         payload = {
@@ -58,20 +50,18 @@ def analyze_and_route(user_prompt: str) -> RoutingDecision:
             res.raise_for_status()
             
             content = res.json()['choices'][0]['message']['content']
-            
-            # Estrazione del blocco JSON via Regex per gestire Markdown ```json ... ```
             json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            
             if json_match:
                 parsed = json.loads(json_match.group(0))
                 category_str = parsed.get("category", "general").lower()
                 
-                # Mappatura della categoria identificata
                 if category_str in TaskCategory.__members__.values():
                     cat_enum = TaskCategory(category_str)
                 else:
                     cat_enum = TaskCategory.GENERAL
 
-                target_model = MODEL_CATALOG.get(cat_enum.value, {}).get("model_id", model)
+                target_model = catalog.get(cat_enum.value, {}).get("model_id", model)
 
                 return RoutingDecision(
                     category=cat_enum,
@@ -80,14 +70,13 @@ def analyze_and_route(user_prompt: str) -> RoutingDecision:
                     reasoning=parsed.get("reasoning", f"Classificato via {model}")
                 )
         except Exception:
-            # In caso di errore (400, 429, timeout), tenta col candidato successivo
             continue
 
-    # Fallback estremo se tutti i modelli di routing falliscono
-    fallback_selected = MODEL_CATALOG["coding"]["model_id"] if MODEL_CATALOG else "openrouter/free"
+    # Fallback estremo
+    fallback_selected = catalog.get("coding", {}).get("model_id", router_model)
     return RoutingDecision(
         category=TaskCategory.CODING,
         selected_model=fallback_selected,
         confidence=0.5,
-        reasoning="Fallback deterministico: servizio di triage momentaneamente non disponibile."
+        reasoning="Fallback deterministico: triage non disponibile."
     )
