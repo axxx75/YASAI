@@ -73,3 +73,87 @@ Ispirato a strumenti come Claude Code o Replit Agent, YASAI integra un **Router 
                │ READ / WRITE  │     │  LIST FILES   │     │  RUN CMD      │
                │ File System   │     │ Workspace     │     │ Shell Sandbox │
                └───────────────┘     └───────────────┘     └───────────────┘
+
+
+## 📋 Struttura del Progetto
+
+```text
+YASAI/
+├── config.py          # Gestione chiavi API, scopritore modelli OpenRouter e cataloghi (Free/Paid)
+├── router.py          # Classificazione e Triage delle query dell'utente
+├── schemas.py         # Data models e enumerazioni (Pydantic / dataclasses)
+├── agent_engine.py    # ReAct Loop, parser della sintassi dei tool ed esecuzione comandi
+├── main_free.py       # Entrypoint CLI per la modalità testing/esperimenti gratuiti
+├── main_paid.py       # Entrypoint CLI per la modalità produzione/lavoro reale
+├── Dockerfile         # Dockerfile sandbox ristretto e privo di privilegi root
+└── compose.yaml       # Configurazione Docker Compose con limiti di risorse
+
+
+## 📦 Quickstart Docker (Sandbox Ristretta)
+Il metodo consigliato per eseguire YASAI in totale sicurezza è all'interno di un container Docker con risorse limitate e senza privilegi root.
+
+1. Clona il repository
+Bash
+git clone [https://github.com/axxx75/YASAI.git](https://github.com/axxx75/YASAI.git)
+cd YASAI
+2. Configura le variabili d'ambiente
+Crea un file .env nella radice del progetto:
+
+Bash
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+3. Avvia l'ambiente isolato
+Modalità Free (Testing):
+
+Bash
+docker compose run --rm yasai-free
+Modalità Paid (Produzione):
+
+Bash
+docker compose run --rm yasai-paid
+Nota di Sicurezza: Il container esegue con un utente non-root (appuser), mem_limit fissato a 512MB e CPU limitata a 1.0 core per evitare processi runaway o esecuzioni dannose sulla macchina host.
+
+##💻 Configurazione ed Esecuzione Locale (Senza Docker)
+Se preferisci eseguire l'infrastruttura direttamente nel tuo terminale locale:
+
+Bash
+# 1. Crea e attiva un ambiente virtuale
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# 2. Installa le dipendenze
+pip install -r requirements.txt
+
+# 3. Esporta la chiave API di OpenRouter
+export OPENROUTER_API_KEY="la-tua-chiave-api"
+
+# 4. Avvia la CLI desiderata
+python main_free.py   # Per la modalità gratuita con rollover
+# oppure
+python main_paid.py   # Per la modalità produzione con Claude/GPT-4o
+
+##🧪 Esempio di Utilizzo CLI
+Plaintext
+=================================================================
+  AI LAB - Agentic CLI Engine [MODE: PAID / PRODUCTION]
+  Primary Coding Model: anthropic/claude-3.5-sonnet
+  Digita 'exit' o 'quit' per uscire.
+=================================================================
+
+paid-agent> Crea una suite di test con pytest per la funzione di triage in router.py
+
+[ROUTER PAID]: Categoria -> CODING | Modello Target -> anthropic/claude-3.5-sonnet
+[ROUTER REASONING]: Richiesta di creazione test unitari in Python per il modulo router.py
+
+--- Turno 1/8 | Modello: [anthropic/claude-3.5-sonnet] ---
+[TOOL EXECUTION]: Lettura file 'router.py'...
+[TOOL EXECUTION]: Scrittura file 'tests/test_router.py'...
+[TOOL EXECUTION]: Esecuzione comando shell '$ pytest tests/test_router.py'...
+
+--- Output Pytest ---
+2 passed in 0.35s
+--------------------
+
+[AGENTE]: La suite di test è stata creata ed eseguita con successo. Tutti i test sono passati!
+
+##🛡️ Licenza
+Questo progetto è distribuito sotto licenza MIT. Consulta il file LICENSE per ulteriori dettagli.
