@@ -9,13 +9,16 @@ cat << "EOF"
 
   🛠️  COMANDI UTILI DISPONIBILI:
 
-      • Agent Router (Free):     python main_free.py
-      • Agent Router (Paid):     python main_paid.py
+      • Agent Router (Free):     python ./agent-router/main_free.py
+      • Agent Router (Paid):     python ./agent-router/main_paid.py
       • Claude Code CLI:         claude
-      • Test Suite:              pytest
+      • OpenCode CLI:            opencode
+      • Test Suite:              ./test/test-stack.sh
       • Git Status:              git status
+      • Gh Status:               gh status
 
-  📍 Workspace montato su: /app ($PWD dell'host)
+
+  📍 Workspace montato su: /workspaces ($PWD dell'host)
 ======================================================================
 EOF
 
