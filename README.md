@@ -364,6 +364,19 @@ Diversi passaggi installano l'ultima versione disponibile (`aichat` da `releases
 | `test/test-stack.sh` | 5 step: presenza binari (`aichat`, `litellm`, `claude`, `superclaude`, `uv`, `npm`), chiamata `aichat` su OpenRouter, ruoli `code-expert` e `refactor`, `litellm --version`, registrazione dei 7 server MCP |
 | `test/get_free_models.py` | Elenca i modelli con prezzo 0 su OpenRouter |
 
+Lo smoke test va eseguito dentro il container:
+
+```bash
+lab
+./test/test-stack.sh
+```
+
+oppure direttamente dall'host:
+
+```bash
+docker exec -it -w /workspaces yasai ./test/test-stack.sh
+```
+
 ---
 
 ## 🧪 Alias comodi:
