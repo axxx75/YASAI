@@ -16,7 +16,7 @@ fail_check() { echo -e "${RED}[FAIL]${NC} $1"; }
 
 # 1. Verification of Binary Executables in PATH
 echo "--- [1/5] Checking Tool Availability ---"
-for tool in aichat litellm claude superclaude uv npm; do
+for tool in aichat litellm claude superclaude opencode openclaude pi backlog uv npm; do
   if command -v "$tool" >/dev/null 2>&1; then
     pass_check "Binary '$tool' found in PATH: $(command -v $tool)"
   else

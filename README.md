@@ -45,6 +45,7 @@ Tutto quanto segue è derivato da [`.devcontainer/Containerfile`](.devcontainer/
 |---|---|---|
 | **Claude Code** | Agente di coding da terminale | installer ufficiale `claude.ai/install.sh` (utente `dev`) |
 | **SuperClaude** | Framework di comandi/comportamenti sopra Claude Code | `pipx install superclaude` + `superclaude install` |
+| **OpenCode** | Agente di coding open source con TUI | `npm i -g opencode-ai@1.18.31` |
 | **OpenClaude** | CLI di coding-agent open source per provider cloud e locali (OpenAI-compatibili, Ollama…) | `npm i -g @gitlawb/openclaude@latest` |
 | **Pi coding agent** | Harness minimale da terminale (tool base: read/write/edit/bash) | `npm i -g @earendil-works/pi-coding-agent` (prefix `~/.local`) |
 | **aichat** | CLI LLM "all-in-one" in Rust, con ruoli pre-configurati | binario `x86_64-unknown-linux-musl` dalle release GitHub |
@@ -96,6 +97,7 @@ flowchart TB
         direction TB
         subgraph AG["Agenti e CLI"]
             CC["Claude Code<br/>+ SuperClaude"]
+            OPC["OpenCode"]
             OC["OpenClaude"]
             PI["Pi coding agent"]
             AI["aichat<br/>(ruoli code-expert / refactor / router)"]
@@ -195,7 +197,7 @@ Dentro il container:
 bash test/test-stack.sh                # verifica binari, aichat, LiteLLM e server MCP
 python3 agent-router/main_free.py      # router + agente con modelli gratuiti
 python3 agent-router/main_paid.py      # router + agente con modelli a pagamento
-aichat -r code-expert "…"              # oppure gli agenti CLI: claude, openclaude, pi
+aichat -r code-expert "…"              # oppure: claude, opencode, openclaude, pi
 ```
 
 **Alternativa — Dev Container:** apri la cartella in VS Code con l'estensione Dev Containers; `devcontainer.json` usa lo stesso `Containerfile`, passa `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` dall'ambiente locale e configura una sessione YASAI locale persistente nel volume `sandbox-yasai-memory`.
@@ -351,7 +353,7 @@ Un'opzione ulteriore è passare all'agente solo le chiavi strettamente necessari
 
 ### Riproducibilità della build
 
-Diversi passaggi installano l'ultima versione disponibile (`aichat` da `releases/latest`, `@gitlawb/openclaude@latest`, `pipx install superclaude`, `pip install litellm[proxy]`). Per un laboratorio "solido" conviene **pinnare le versioni**. Nota: il 24 marzo 2026 due release PyPI di LiteLLM (1.82.7 e 1.82.8) sono state compromesse; l'avviso ufficiale è nel [blog LiteLLM](https://docs.litellm.ai/blog/security-update-march-2026).
+Diversi passaggi installano l'ultima versione disponibile (`aichat` da `releases/latest`, `@gitlawb/openclaude@latest`, `pipx install superclaude`, `pip install litellm[proxy]`). OpenCode e Backlog.md sono invece installati a versione fissata. Per un laboratorio "solido" conviene **pinnare anche le altre versioni**. Nota: il 24 marzo 2026 due release PyPI di LiteLLM (1.82.7 e 1.82.8) sono state compromesse; l'avviso ufficiale è nel [blog LiteLLM](https://docs.litellm.ai/blog/security-update-march-2026).
 
 ---
 
@@ -423,7 +425,7 @@ Stato del progetto: sviluppo attivo, prime release (`Start rel 0.1`). Punti aper
 **Strumenti AI**
 - [OpenRouter](https://openrouter.ai/) · [LiteLLM docs](https://docs.litellm.ai/) · [aichat](https://github.com/sigoden/aichat)
 - [Claude Code / documentazione Claude](https://docs.claude.com) · [Model Context Protocol](https://modelcontextprotocol.io/)
-- [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) · [OpenClaude](https://github.com/Gitlawb/openclaude) · [Pi coding agent](https://github.com/earendil-works/pi) ([pi.dev](https://pi.dev/))
+- [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) · [OpenCode](https://github.com/anomalyco/opencode) · [OpenClaude](https://github.com/Gitlawb/openclaude) · [Pi coding agent](https://github.com/earendil-works/pi) ([pi.dev](https://pi.dev/))
 
 **Badge e loghi:** [Shields.io](https://shields.io/) con slug [Simple Icons](https://simpleicons.org/).
 

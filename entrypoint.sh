@@ -14,6 +14,7 @@ cat << "EOF"
       Agent Router Paid       python agent-router/main_paid.py
       Claude Code             claude
       SuperClaude             superclaude
+      OpenCode                opencode
       OpenClaude              openclaude
       Pi coding agent         pi
 
