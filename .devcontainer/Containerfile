@@ -165,3 +165,170 @@ RUN --mount=type=cache,target=/home/dev/.npx \
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/bin/bash"]
+FROM fedora:41
+
+RUN --mount=type=cache,target=/var/cache/dnf \
+    dnf -y install \
+      git \
+      curl \
+      jq \
+      bash \
+      findutils \
+      procps-ng \
+      openssh-clients \
+      ca-certificates \
+      python3 \
+      python3-pip \
+      nodejs \
+      npm \
+      java-21-openjdk-devel \
+      maven \
+      vim-minimal \
+      nano \
+      tar \
+      gzip \
+      pipx \
+      uv \
+      gh \
+      fuse3 \
+      fuse-overlayfs \
+    && dnf clean all
+
+ARG MCP_ATLASSIAN_TAG=v0.21.0
+
+RUN npm install -g backlog.md@1.52.0
+
+USER root
+
+RUN useradd -m -u 1000 -s /bin/bash dev
+
+RUN mkdir -p /run/user/1000 /usr/local/lib/node_modules/ \
+    && chown dev:dev /run/user/1000 \
+    && chmod 700 /run/user/1000 \
+    && chown -R dev:dev /usr/local/lib/node_modules/
+
+RUN install -d -m 0755 -o dev -g dev \
+    /home/dev/.config \
+    /home/dev/.config/gcloud
+
+RUN echo 'export PS1="\[\e[1;35m\][AI-LAB]\[\e[0m\] \[\e[1;32m\]\u\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "' > /etc/profile.d/custom_prompt.sh \
+    && echo 'alias ls="ls --color=auto"' >> /etc/profile.d/custom_prompt.sh \
+    && echo 'alias ll="ls -la --color=auto"' >> /etc/profile.d/custom_prompt.sh \
+    && echo 'alias ai-router="aichat -r router"' >> /etc/profile.d/custom_prompt.sh \
+    && echo 'alias ai-fast="aichat -m openrouter:google/gemini-2.0-flash-001"' >> /etc/profile.d/custom_prompt.sh \
+    && echo 'alias ai-deep="aichat -m openrouter:deepseek/deepseek-r1"'>> /etc/profile.d/custom_prompt.sh \
+    && echo 'alias ai-coder="aichat -r code-expert"'>> /etc/profile.d/custom_prompt.sh \
+    && chmod +x /etc/profile.d/custom_prompt.sh \
+    && echo 'if [ -f /etc/profile.d/custom_prompt.sh ]; then . /etc/profile.d/custom_prompt.sh; fi' >> /home/dev/.bashrc \
+    && echo 'if [ -f /etc/profile.d/custom_prompt.sh ]; then . /etc/profile.d/custom_prompt.sh; fi' >> /home/dev/.bash_profile
+
+ENV PATH="/home/dev/.local/bin:/home/dev/.opencode/bin:${PATH}"
+
+RUN echo 'export PATH="/home/dev/.local/bin:/home/dev/.opencode/bin:${PATH}"' > /etc/profile.d/custom_path.sh \
+    && chmod +x /etc/profile.d/custom_path.sh
+
+RUN --mount=type=cache,target=/root/.npm \ 
+   npm install -g \
+     opencode-ai@1.18.31 \
+     @gitlawb/openclaude@latest
+
+RUN curl -fsSL https://github.com/sigoden/aichat/releases/latest/download/aichat-v$(curl -s https://api.github.com/repos/sigoden/aichat/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin
+
+RUN mkdir -p /home/dev/.config/aichat/roles \
+    /home/dev/.config/prompts
+
+COPY --chown=dev:dev config/prompts/router-system.md /home/dev/.config/prompts/router-system.md
+
+RUN cat << 'EOF' > /home/dev/.config/aichat/config.yaml
+model: openrouter:openai/gpt-4.1
+editor: vim
+
+clients:
+  - type: openai-compatible
+    name: openrouter
+    api_base: https://openrouter.ai/api/v1
+    api_key: "$OPENROUTER_API_KEY"
+
+  - type: openai-compatible
+    name: local-llm
+    api_base: http://host.docker.internal:11434/v1
+EOF
+
+RUN cat << 'EOF' > /home/dev/.config/aichat/roles/code-expert.md
+---
+model: openrouter:anthropic/claude-3.7-sonnet
+temperature: 0.2
+---
+Sei un Senior Software Engineer. Fornisci risposte dirette, codice pulito e architetture ben strutturate.
+EOF
+
+RUN cat << 'EOF' > /home/dev/.config/aichat/roles/refactor.md
+---
+model: openrouter:deepseek/deepseek-r1
+temperature: 0.1
+---
+Analizza il codice fornito, individua colli di bottiglia o problemi di sicurezza ed esegui un refactoring pulito.
+EOF
+
+RUN cat << 'EOF' > /home/dev/.config/aichat/roles/router.md
+---
+model: openrouter:anthropic/claude-3.7-sonnet
+temperature: 0.2
+---
+EOF
+
+RUN cat /home/dev/.config/prompts/router-system.md >> /home/dev/.config/aichat/roles/router.md
+
+
+RUN pip install --no-cache-dir "litellm[proxy]" \
+    && chmod +x /usr/local/bin/litellm* || true
+
+RUN chown -R dev:dev /home/dev/.config
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh \
+    && printf '%s\n' \
+      'if [ "${YASAI_BANNER_SHOWN:-0}" != "1" ] && [ -x /usr/local/bin/entrypoint.sh ]; then' \
+      '    /usr/local/bin/entrypoint.sh --banner-only' \
+      'fi' >> /home/dev/.bashrc \
+    && printf '%s\n' \
+      'if [ "${YASAI_BANNER_SHOWN:-0}" != "1" ] && [ -x /usr/local/bin/entrypoint.sh ]; then' \
+      '    /usr/local/bin/entrypoint.sh --banner-only' \
+      'fi' >> /root/.bashrc
+
+# --- SWITCH UTENTE DEV ---
+USER dev
+WORKDIR /workspaces
+
+ENV PATH="/home/dev/.opencode/bin:/home/dev/.local/bin:${PATH}"
+ENV MCP_ATLASSIAN_TAG="${MCP_ATLASSIAN_TAG}"
+
+RUN mkdir -p /home/dev/.m2 \
+    /home/dev/.cache/uv \
+    /home/dev/.local/share/mcp \
+    /home/dev/.local/share/yasai \
+    /home/dev/.claude \
+    /home/dev/.config
+
+RUN curl -fsSL https://claude.ai/install.sh -o /tmp/claude-install.sh \
+    && bash /tmp/claude-install.sh \
+    && rm -f /tmp/claude-install.sh
+
+RUN mkdir -p /home/dev/.openclaude \
+    && chown -R dev:dev /home/dev/.openclaude
+
+RUN --mount=type=cache,target=/home/dev/.cache/pip \
+   pipx install superclaude
+RUN superclaude install
+RUN superclaude mcp --servers sequential-thinking --servers context7 --servers serena --servers playwright
+
+RUN claude mcp add --scope user memory npx  @modelcontextprotocol/server-memory
+RUN claude mcp add --scope user mattpocock-skills npx @mattpocock/skills
+
+RUN claude mcp add --scope user --transport http atlassian https://mcp.atlassian.com/v1/mcp
+
+RUN --mount=type=cache,target=/home/dev/.npx \ 
+   npm install -g --ignore-scripts --min-release-age=0 --prefix /home/dev/.local @earendil-works/pi-coding-agent
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/bin/bash"]
