@@ -201,6 +201,13 @@ aichat -r code-expert "…"              # oppure gli agenti CLI: claude, opencl
 
 **Alternativa — Dev Container:** apri la cartella in VS Code con l'estensione Dev Containers; `devcontainer.json` usa lo stesso `Containerfile`, passa `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` dall'ambiente locale e configura una sessione YASAI locale persistente nel volume `sandbox-yasai-memory`.
 
+> Se il volume della memoria è stato creato prima che
+> `/home/dev/.local/share/yasai` fosse predisposta nell'immagine, può essere
+> rimasto di proprietà di `root`. Dopo aver fermato il container, elimina
+> soltanto il volume `dev-yasai-memory` (Compose) oppure
+> `sandbox-yasai-memory` (Dev Container) e ricostruisci. Non eliminare gli
+> altri volumi, che possono contenere cache o configurazioni degli agenti.
+
 ### Variabili d'ambiente principali (`.env.example`)
 
 | Variabile | Usata da |

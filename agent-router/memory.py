@@ -99,7 +99,15 @@ class ConversationStore:
             pass
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.db_path, timeout=10)
+        try:
+            connection = sqlite3.connect(self.db_path, timeout=10)
+        except sqlite3.OperationalError as error:
+            raise RuntimeError(
+                f"Impossibile aprire il database memoria '{self.db_path}'. "
+                "Verifica che la directory esista e sia scrivibile dall'utente corrente. "
+                "Se usi Docker con un volume creato in precedenza, ricrea soltanto il "
+                "volume della memoria YASAI."
+            ) from error
         connection.execute("PRAGMA foreign_keys = ON")
         connection.execute("PRAGMA busy_timeout = 10000")
         return connection

@@ -16,6 +16,9 @@ services:
       - GH_TOKEN=${GITHUB_TOKEN}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - YASAI_MEMORY_OWNER_ID=${YASAI_MEMORY_OWNER_ID:-local-user}
+      - YASAI_SESSION_ID=${YASAI_SESSION_ID:-default}
+      - YASAI_MEMORY_DB_PATH=${YASAI_MEMORY_DB_PATH:-/home/dev/.local/share/yasai/conversations.db}
     tty: true
     stdin_open: true
     devices:
