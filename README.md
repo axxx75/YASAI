@@ -382,10 +382,10 @@ alias lab-rebuild='DOCKER_BUILDKIT=1 docker compose -f $AI_LAB_COMPOSE build --n
 
 # --- Accesso Shell ---
 # Accesso standard come utente 'dev' (workspace predefinito)
-alias lab='docker exec -it -w /workspaces yasai bash'
+alias lab='docker exec -it -w /workspaces yasai /usr/local/bin/entrypoint.sh bash'
 
 # Accesso come 'root' per manutenzione pacchetti (es. apt/dnf)
-alias lab-root='docker exec -it -u root -w /workspaces yasai bash'
+alias lab-root='docker exec -it -u root -w /workspaces yasai /usr/local/bin/entrypoint.sh bash'
 
 # --- Diagnostic & Monitoraggio ---
 alias lab-logs='docker logs -f --tail 100 yasai'
