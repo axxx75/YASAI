@@ -1,1 +1,0 @@
-- [Ownership della home dev](dev-home-ownership.md) — crea le directory sotto `.local` solo dopo `USER dev`, altrimenti gli installer CLI falliscono.
