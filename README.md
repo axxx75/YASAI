@@ -160,7 +160,7 @@ YASAI/
 ├── test/
 │   ├── test-stack.sh         # Smoke test del container (tool, aichat, LiteLLM, MCP)
 │   └── get_free_models.py    # Elenca i modelli gratuiti attivi su OpenRouter
-├── docker-compose.yml        # Servizio `ai-lab-dev` (container `yasai`)
+├── docker-compose.yml        # Servizio `yasai-sandbox` (container `yasai`)
 └── .env.example              # Template variabili d'ambiente
 ```
 
@@ -182,12 +182,11 @@ cp .env.example .env
 # 3. Adatta il mount del workspace in docker-compose.yml
 #    (oggi punta a /home/axxx/yasai:/workspaces:z — sostituiscilo con il tuo path)
 
-# 4. Build e avvio (il container resta vivo con `sleep infinity`)
-docker compose build
-docker compose up -d
+# 4. Build e avvio (`entrypoint.sh` avvia Bash come utente `dev`)
+docker compose up -d --build
 
 # 5. Entra nel laboratorio
-docker compose exec ai-lab-dev bash
+docker compose exec yasai-sandbox bash
 ```
 
 Dentro il container:
@@ -335,7 +334,7 @@ Verificato leggendo `docker-compose.yml`, `devcontainer.json` e `Containerfile`.
 ```yaml
 # Proposta di hardening — valori d'esempio da tarare, NON ancora nel repo
 services:
-  ai-lab-dev:
+  yasai-sandbox:
     # rimuovi: devices (/dev/fuse), cap_add: SYS_ADMIN, security_opt: apparmor:unconfined
     cap_drop: [ALL]
     security_opt:
