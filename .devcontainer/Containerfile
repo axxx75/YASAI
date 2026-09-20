@@ -57,9 +57,9 @@ RUN echo 'export PS1="\[\e[1;35m\][AI-LAB]\[\e[0m\] \[\e[1;32m\]\u\[\e[0m\]:\[\e
     && echo 'if [ -f /etc/profile.d/custom_prompt.sh ]; then . /etc/profile.d/custom_prompt.sh; fi' >> /home/dev/.bashrc \
     && echo 'if [ -f /etc/profile.d/custom_prompt.sh ]; then . /etc/profile.d/custom_prompt.sh; fi' >> /home/dev/.bash_profile
 
-ENV PATH="/home/dev/.local/bin:${PATH}"
+ENV PATH="/home/dev/.local/bin:/home/dev/.opencode/bin:${PATH}"
 
-RUN echo 'export PATH="/home/dev/.local/bin:${PATH}"' > /etc/profile.d/custom_path.sh \
+RUN echo 'export PATH="/home/dev/.local/bin:/home/dev/.opencode/bin:${PATH}"' > /etc/profile.d/custom_path.sh \
     && chmod +x /etc/profile.d/custom_path.sh
 
 RUN --mount=type=cache,target=/root/.npm \ 
@@ -121,13 +121,21 @@ RUN pip install --no-cache-dir "litellm[proxy]" \
 RUN chown -R dev:dev /home/dev/.config
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh \
+    && printf '%s\n' \
+      'if [ "${YASAI_BANNER_SHOWN:-0}" != "1" ] && [ -x /usr/local/bin/entrypoint.sh ]; then' \
+      '    /usr/local/bin/entrypoint.sh --banner-only' \
+      'fi' >> /home/dev/.bashrc \
+    && printf '%s\n' \
+      'if [ "${YASAI_BANNER_SHOWN:-0}" != "1" ] && [ -x /usr/local/bin/entrypoint.sh ]; then' \
+      '    /usr/local/bin/entrypoint.sh --banner-only' \
+      'fi' >> /root/.bashrc
 
 # --- SWITCH UTENTE DEV ---
 USER dev
 WORKDIR /workspaces
 
-ENV PATH="/home/dev/.local/bin:${PATH}"
+ENV PATH="/home/dev/.opencode/bin:/home/dev/.local/bin:${PATH}"
 ENV MCP_ATLASSIAN_TAG="${MCP_ATLASSIAN_TAG}"
 
 RUN mkdir -p /home/dev/.m2 \

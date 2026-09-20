@@ -54,8 +54,13 @@ cat << "EOF"
 ======================================================================
 EOF
 
+if [ "${1:-}" = "--banner-only" ]; then
+    exit 0
+fi
+
 if [ "$#" -eq 0 ]; then
     set -- /bin/bash
 fi
 
+export YASAI_BANNER_SHOWN=1
 exec "$@"
