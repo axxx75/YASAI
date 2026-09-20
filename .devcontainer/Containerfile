@@ -61,7 +61,9 @@ RUN echo 'export PATH="/home/dev/.local/bin:/home/dev/.opencode/bin:${PATH}"' > 
     && chmod +x /etc/profile.d/custom_path.sh
 
 RUN --mount=type=cache,target=/root/.npm \ 
-   npm install -g @gitlawb/openclaude@latest
+   npm install -g \
+     opencode-ai@1.18.31 \
+     @gitlawb/openclaude@latest
 
 RUN curl -fsSL https://github.com/sigoden/aichat/releases/latest/download/aichat-v$(curl -s https://api.github.com/repos/sigoden/aichat/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')-x86_64-unknown-linux-musl.tar.gz | tar -xz -C /usr/local/bin
 
