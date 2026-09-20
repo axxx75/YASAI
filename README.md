@@ -45,11 +45,12 @@ Tutto quanto segue è derivato da [`.devcontainer/Containerfile`](.devcontainer/
 |---|---|---|
 | **Claude Code** | Agente di coding da terminale | installer ufficiale `claude.ai/install.sh` (utente `dev`) |
 | **SuperClaude** | Framework di comandi/comportamenti sopra Claude Code | `pipx install superclaude` + `superclaude install` |
+| **OpenCode** | Agente di coding open source con TUI | `npm i -g opencode-ai@1.18.31` |
 | **OpenClaude** | CLI di coding-agent open source per provider cloud e locali (OpenAI-compatibili, Ollama…) | `npm i -g @gitlawb/openclaude@latest` |
 | **Pi coding agent** | Harness minimale da terminale (tool base: read/write/edit/bash) | `npm i -g @earendil-works/pi-coding-agent` (prefix `~/.local`) |
 | **aichat** | CLI LLM "all-in-one" in Rust, con ruoli pre-configurati | binario `x86_64-unknown-linux-musl` dalle release GitHub |
 | **LiteLLM** (`litellm[proxy]`) | Gateway/proxy LLM OpenAI-compatibile | `pip install` (Python di sistema) |
-| **backlog.md** | Gestione backlog/task in Markdown | `npm i -g backlog.md` |
+| **backlog.md** | Gestione backlog/task in Markdown | `npm i -g backlog.md@1.52.0` |
 
 ### Server MCP pre-registrati
 
@@ -96,6 +97,7 @@ flowchart TB
         direction TB
         subgraph AG["Agenti e CLI"]
             CC["Claude Code<br/>+ SuperClaude"]
+            OPC["OpenCode"]
             OC["OpenClaude"]
             PI["Pi coding agent"]
             AI["aichat<br/>(ruoli code-expert / refactor / router)"]
@@ -160,7 +162,7 @@ YASAI/
 ├── test/
 │   ├── test-stack.sh         # Smoke test del container (tool, aichat, LiteLLM, MCP)
 │   └── get_free_models.py    # Elenca i modelli gratuiti attivi su OpenRouter
-├── docker-compose.yml        # Servizio `ai-lab-dev` (container `yasai`)
+├── docker-compose.yml        # Servizio `yasai-sandbox` (container `yasai`)
 └── .env.example              # Template variabili d'ambiente
 ```
 
@@ -182,12 +184,11 @@ cp .env.example .env
 # 3. Adatta il mount del workspace in docker-compose.yml
 #    (oggi punta a /home/axxx/yasai:/workspaces:z — sostituiscilo con il tuo path)
 
-# 4. Build e avvio (il container resta vivo con `sleep infinity`)
-docker compose build
-docker compose up -d
+# 4. Build e avvio (`entrypoint.sh` avvia Bash come utente `dev`)
+docker compose up -d --build
 
 # 5. Entra nel laboratorio
-docker compose exec ai-lab-dev bash
+docker compose exec yasai-sandbox bash
 ```
 
 Dentro il container:
@@ -196,10 +197,17 @@ Dentro il container:
 bash test/test-stack.sh                # verifica binari, aichat, LiteLLM e server MCP
 python3 agent-router/main_free.py      # router + agente con modelli gratuiti
 python3 agent-router/main_paid.py      # router + agente con modelli a pagamento
-aichat -r code-expert "…"              # oppure gli agenti CLI: claude, openclaude, pi
+aichat -r code-expert "…"              # oppure: claude, opencode, openclaude, pi
 ```
 
-**Alternativa — Dev Container:** apri la cartella in VS Code con l'estensione Dev Containers; `devcontainer.json` usa lo stesso `Containerfile` e passa `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` dall'ambiente locale.
+**Alternativa — Dev Container:** apri la cartella in VS Code con l'estensione Dev Containers; `devcontainer.json` usa lo stesso `Containerfile`, passa `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` dall'ambiente locale e configura una sessione YASAI locale persistente nel volume `sandbox-yasai-memory`.
+
+> Se il volume della memoria è stato creato prima che
+> `/home/dev/.local/share/yasai` fosse predisposta nell'immagine, può essere
+> rimasto di proprietà di `root`. Dopo aver fermato il container, elimina
+> soltanto il volume `dev-yasai-memory` (Compose) oppure
+> `sandbox-yasai-memory` (Dev Container) e ricostruisci. Non eliminare gli
+> altri volumi, che possono contenere cache o configurazioni degli agenti.
 
 ### Variabili d'ambiente principali (`.env.example`)
 
@@ -212,6 +220,12 @@ aichat -r code-expert "…"              # oppure gli agenti CLI: claude, opencl
 | `OLLAMA_HOST` | Modelli locali via `host.docker.internal:11434` |
 | `GITHUB_TOKEN`, `GITHUB_OWNER`, `GITHUB_REPO` | `gh` e integrazioni GitHub |
 | `HF_TOKEN`, `ILAB_REMOTE_*` | Hugging Face / InstructLab (configurazione predisposta) |
+| `YASAI_MEMORY_DB_PATH` | Percorso del database SQLite delle conversazioni |
+| `YASAI_MEMORY_MAX_MESSAGES` | Numero massimo di messaggi conservati per sessione |
+| `YASAI_MEMORY_MAX_CONTENT_CHARS` | Dimensione massima di un singolo messaggio salvato |
+| `YASAI_MEMORY_OWNER_ID` | Identità obbligatoria del proprietario; isola sessioni con lo stesso ID |
+| `YASAI_MEMORY_RETENTION_DAYS` | Giorni di inattività prima della cancellazione automatica |
+| `YASAI_SESSION_ID` | Sessione da riprendere all'avvio (default: `default`) |
 
 > ⚠️ `.env` è in `.gitignore`. Non committare mai chiavi reali.
 
@@ -238,6 +252,27 @@ Il pool **Free** è scoperto a runtime: si interroga `GET /models` e si tengono 
 
 **3. Esecuzione.** Solo `coding` e `reasoning` entrano nel **ciclo ReAct** (`run_agent_loop`, max **8 turni**, un solo tool per turno). `general` e `fast_check` fanno una singola chiamata in streaming. Su errore **HTTP 429** si passa al modello successivo della lista.
 
+**4. Memoria conversazionale.** Entrambi gli entrypoint salvano in SQLite i
+prompt e le risposte finali della sessione. La cronologia recente viene passata
+sia al router, per interpretare richieste contestuali, sia al modello scelto. I
+messaggi interni dei tool non vengono conservati. Il database applica una
+finestra massima configurabile e rimuove i formati di token più comuni prima
+del salvataggio. Le sessioni sono separate per proprietario, il file SQLite e
+la sua directory usano permessi locali restrittivi e le sessioni inattive
+vengono eliminate secondo la retention configurata.
+
+- `/new` crea e seleziona una nuova sessione;
+- `/clear` cancella la cronologia della sessione corrente;
+- `YASAI_SESSION_ID` permette di selezionare una sessione nota all'avvio;
+- il volume `dev-yasai-memory` conserva il database tra le ricreazioni del
+  container.
+
+**5. Backlog persistente.** Per lavori complessi o esplicitamente pianificati,
+il ciclo ReAct può consultare e aggiornare Backlog.md tramite tool dedicati.
+Il backlog non viene usato per domande o correzioni rapide e non viene
+inizializzato automaticamente: esegui una volta `backlog init` nella root del
+progetto in cui vuoi conservare i task.
+
 **Tool esposti al modello** (sintassi testuale nel system prompt):
 
 | Tool | Sintassi | Comportamento |
@@ -246,6 +281,11 @@ Il pool **Free** è scoperto a runtime: si interroga `GET /models` e si tengono 
 | `READ_FILE` | `[READ_FILE: percorso]` | Legge un file UTF-8 |
 | `WRITE_FILE` | `[WRITE_FILE: percorso]` + blocco `<<< … >>>` | Crea/sovrascrive un file (crea le directory intermedie) |
 | `RUN_CMD` | `[RUN_CMD: comando]` | Esegue in shell, **timeout 30 s**, output troncato a 3000 caratteri |
+| `BACKLOG_LIST` | `[BACKLOG_LIST]` | Elenca i task in JSON per evitare duplicati |
+| `BACKLOG_VIEW` | `[BACKLOG_VIEW: TASK-ID]` | Legge il dettaglio di un task |
+| `BACKLOG_CREATE` | `[BACKLOG_CREATE: titolo]` + blocco `<<< … >>>` | Crea un task persistente con descrizione |
+| `BACKLOG_NOTE` | `[BACKLOG_NOTE: TASK-ID]` + blocco `<<< … >>>` | Aggiunge una nota di avanzamento |
+| `BACKLOG_COMPLETE` | `[BACKLOG_COMPLETE: TASK-ID]` | Imposta lo stato del task su `Done` |
 
 Esempio di sessione:
 
@@ -296,7 +336,7 @@ Verificato leggendo `docker-compose.yml`, `devcontainer.json` e `Containerfile`.
 ```yaml
 # Proposta di hardening — valori d'esempio da tarare, NON ancora nel repo
 services:
-  ai-lab-dev:
+  yasai-sandbox:
     # rimuovi: devices (/dev/fuse), cap_add: SYS_ADMIN, security_opt: apparmor:unconfined
     cap_drop: [ALL]
     security_opt:
@@ -313,7 +353,7 @@ Un'opzione ulteriore è passare all'agente solo le chiavi strettamente necessari
 
 ### Riproducibilità della build
 
-Diversi passaggi installano l'ultima versione disponibile (`aichat` da `releases/latest`, `@gitlawb/openclaude@latest`, `pipx install superclaude`, `pip install litellm[proxy]`). Per un laboratorio "solido" conviene **pinnare le versioni**. Nota: il 24 marzo 2026 due release PyPI di LiteLLM (1.82.7 e 1.82.8) sono state compromesse; l'avviso ufficiale è nel [blog LiteLLM](https://docs.litellm.ai/blog/security-update-march-2026).
+Diversi passaggi installano l'ultima versione disponibile (`aichat` da `releases/latest`, `@gitlawb/openclaude@latest`, `pipx install superclaude`, `pip install litellm[proxy]`). OpenCode e Backlog.md sono invece installati a versione fissata. Per un laboratorio "solido" conviene **pinnare anche le altre versioni**. Nota: il 24 marzo 2026 due release PyPI di LiteLLM (1.82.7 e 1.82.8) sono state compromesse; l'avviso ufficiale è nel [blog LiteLLM](https://docs.litellm.ai/blog/security-update-march-2026).
 
 ---
 
@@ -323,6 +363,19 @@ Diversi passaggi installano l'ultima versione disponibile (`aichat` da `releases
 |---|---|
 | `test/test-stack.sh` | 5 step: presenza binari (`aichat`, `litellm`, `claude`, `superclaude`, `uv`, `npm`), chiamata `aichat` su OpenRouter, ruoli `code-expert` e `refactor`, `litellm --version`, registrazione dei 7 server MCP |
 | `test/get_free_models.py` | Elenca i modelli con prezzo 0 su OpenRouter |
+
+Lo smoke test va eseguito dentro il container:
+
+```bash
+lab
+./test/test-stack.sh
+```
+
+oppure direttamente dall'host:
+
+```bash
+docker exec -it -w /workspaces yasai ./test/test-stack.sh
+```
 
 ---
 
@@ -365,7 +418,7 @@ Stato del progetto: sviluppo attivo, prime release (`Start rel 0.1`). Punti aper
 
 - [ ] **`tools.py` è codice orfano**: i tool effettivi sono duplicati in `agent_engine.py` (e in `main.py`).
 - [ ] **Nessuna memoria di conversazione** tra un prompt e il successivo: ogni richiesta riparte da zero.
-- [ ] **Ruolo `router` di aichat**: il file usa `$(cat /home/dev/.config/prompts/router-system.md)` dentro un heredoc con apici, quindi non viene espanso, e quel file non viene creato dal `Containerfile`.
+- [x] **Ruolo `router` di aichat**: il prompt vive in `config/prompts/router-system.md`; il `Containerfile` lo copia nell'immagine e lo aggiunge esplicitamente al file del ruolo.
 
 - [ ] **`config_litellm.yaml` e `config/instructlab/config.yaml` non sono agganciati** a compose/Containerfile; InstructLab non è installato nell'immagine.
 - [ ] **`.env.example`** definisce due volte `DEFAULT_MODEL` e `OPENAI_API_BASE` (vince l'ultima se il file viene "sourced").
@@ -385,7 +438,7 @@ Stato del progetto: sviluppo attivo, prime release (`Start rel 0.1`). Punti aper
 **Strumenti AI**
 - [OpenRouter](https://openrouter.ai/) · [LiteLLM docs](https://docs.litellm.ai/) · [aichat](https://github.com/sigoden/aichat)
 - [Claude Code / documentazione Claude](https://docs.claude.com) · [Model Context Protocol](https://modelcontextprotocol.io/)
-- [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) · [OpenClaude](https://github.com/Gitlawb/openclaude) · [Pi coding agent](https://github.com/earendil-works/pi) ([pi.dev](https://pi.dev/))
+- [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) · [OpenCode](https://github.com/anomalyco/opencode) · [OpenClaude](https://github.com/Gitlawb/openclaude) · [Pi coding agent](https://github.com/earendil-works/pi) ([pi.dev](https://pi.dev/))
 
 **Badge e loghi:** [Shields.io](https://shields.io/) con slug [Simple Icons](https://simpleicons.org/).
 

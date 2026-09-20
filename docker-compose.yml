@@ -32,9 +32,11 @@ services:
       - dev-uv-cache:/home/dev/.cache/uv
       - dev-mcp-memory:/home/dev/.local/share/mcp
       - dev-claude-config:/home/dev/.claude
+      - dev-yasai-memory:/home/dev/.local/share/yasai
 
 volumes:
   dev-m2-cache:
   dev-uv-cache:
   dev-mcp-memory:
   dev-claude-config:
+  dev-yasai-memory:
