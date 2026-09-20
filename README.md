@@ -49,7 +49,7 @@ Tutto quanto segue è derivato da [`.devcontainer/Containerfile`](.devcontainer/
 | **Pi coding agent** | Harness minimale da terminale (tool base: read/write/edit/bash) | `npm i -g @earendil-works/pi-coding-agent` (prefix `~/.local`) |
 | **aichat** | CLI LLM "all-in-one" in Rust, con ruoli pre-configurati | binario `x86_64-unknown-linux-musl` dalle release GitHub |
 | **LiteLLM** (`litellm[proxy]`) | Gateway/proxy LLM OpenAI-compatibile | `pip install` (Python di sistema) |
-| **backlog.md** | Gestione backlog/task in Markdown | `npm i -g backlog.md` |
+| **backlog.md** | Gestione backlog/task in Markdown | `npm i -g backlog.md@1.52.0` |
 
 ### Server MCP pre-registrati
 
@@ -259,6 +259,12 @@ vengono eliminate secondo la retention configurata.
 - il volume `dev-yasai-memory` conserva il database tra le ricreazioni del
   container.
 
+**5. Backlog persistente.** Per lavori complessi o esplicitamente pianificati,
+il ciclo ReAct può consultare e aggiornare Backlog.md tramite tool dedicati.
+Il backlog non viene usato per domande o correzioni rapide e non viene
+inizializzato automaticamente: esegui una volta `backlog init` nella root del
+progetto in cui vuoi conservare i task.
+
 **Tool esposti al modello** (sintassi testuale nel system prompt):
 
 | Tool | Sintassi | Comportamento |
@@ -267,6 +273,11 @@ vengono eliminate secondo la retention configurata.
 | `READ_FILE` | `[READ_FILE: percorso]` | Legge un file UTF-8 |
 | `WRITE_FILE` | `[WRITE_FILE: percorso]` + blocco `<<< … >>>` | Crea/sovrascrive un file (crea le directory intermedie) |
 | `RUN_CMD` | `[RUN_CMD: comando]` | Esegue in shell, **timeout 30 s**, output troncato a 3000 caratteri |
+| `BACKLOG_LIST` | `[BACKLOG_LIST]` | Elenca i task in JSON per evitare duplicati |
+| `BACKLOG_VIEW` | `[BACKLOG_VIEW: TASK-ID]` | Legge il dettaglio di un task |
+| `BACKLOG_CREATE` | `[BACKLOG_CREATE: titolo]` + blocco `<<< … >>>` | Crea un task persistente con descrizione |
+| `BACKLOG_NOTE` | `[BACKLOG_NOTE: TASK-ID]` + blocco `<<< … >>>` | Aggiunge una nota di avanzamento |
+| `BACKLOG_COMPLETE` | `[BACKLOG_COMPLETE: TASK-ID]` | Imposta lo stato del task su `Done` |
 
 Esempio di sessione:
 
